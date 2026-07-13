@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>ພະແນກຮັບແຈ້ງຄວາມ ແລະ ປະສານງານ</title>
+<meta name="description" content="ລະບົບເກັບຂໍ້ມູນ ແລະ ຄຸ້ມຄອງສະຖານະບໍລິສັດ">
+<meta name="theme-color" content="#1a302a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ຮັບແຈ້ງຄວາມ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- crossorigin จำเป็น: ให้ SW cache stylesheet ได้ (opaque response ใช้ offline ไม่ได้) -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+<style>
+/* ============================================================
+   ທະບຽນບໍລິສັດ (Borisat) — PWA เก็บข้อมูลบริษัท + ระบบล็อคสถานะ
+   UI ลาวล้วน / ฟอนต์ Noto Sans Lao (webfont → ทำงานทั้ง Android + iOS)
+   โทนสี: เขียวเข้มตำรวจลาว + ทองตราสัญลักษณ์ (ยืม palette จาก Phi)
+   token 2 ชั้น: ชั้น 1 ค่าดิบ → ชั้น 2 alias → component
+   ============================================================ */
+:root{
+  /* ── ชั้น 1: ค่าดิบ ── */
+  --forest-50:#eef5f0; --forest-100:#d5e8da; --forest-200:#b0d4ba;
+  --forest-300:#82bc96; --forest-400:#5aa374; --forest-500:#3e6b52;
+  --forest-600:#2f5644; --forest-700:#234136; --forest-800:#1a302a;
+  --forest-900:#101f1c;
+  --sun-100:#fdf2cc; --sun-200:#fae498; --sun-300:#f5d054;
+  --sun-400:#e8b818; --sun-500:#c49810; --sun-700:#775b0a; --sun-800:#523f07;
+  --ember-100:#f9d8d3; --ember-300:#e8806f; --ember-400:#dc5642; --ember-500:#c03a27;
+  --ember-600:#9e2e1f; --ember-700:#7a2318;
+
+  /* ── ชั้น 2: alias (light) ── */
+  --bg-page:#eef2ed;
+  --bg-surface:#ffffff;
+  --bg-sunken:#e3eae2;
+  --text-primary:#182420;
+  --text-secondary:#46584f;
+  --text-tertiary:#54655c; /* ≥4.5:1 บนทุกพื้น light (ขาว/bg-page/bg-sunken) */
+  --text-inverse:#f2f7f3;
+  --border:rgba(16,31,28,.13);
+  --border-strong:rgba(16,31,28,.5); /* ขอบ input ต้อง ≥3:1 (WCAG 1.4.11) */
+  --interactive:var(--forest-600);
+  --interactive-hover:var(--forest-700);
+  --interactive-soft:var(--forest-50);
+  --interactive-text:var(--forest-600);
+  --gold:var(--sun-400);
+  --locked:var(--sun-500);
+  --locked-text:var(--sun-800);
+  --locked-soft:var(--sun-100);
+  --danger:var(--ember-600);
+  --danger-text:var(--ember-700);
+  --danger-soft:var(--ember-100);
+  --success-soft:var(--forest-100);
+  --success-text:var(--forest-700);
+  --hero-a:var(--forest-700);
+  --hero-b:var(--forest-900);
+  --switch-off:var(--forest-600); /* track สวิตช์ต้อง ≥3:1 กับพื้นแผง */
+  --switch-on:var(--sun-700);
+  --wa:#128c7e; /* WhatsApp teal เข้ม — ขาวบนพื้นนี้ 4.35:1 (เขียวสด #25D366 ตกเกณฑ์) */
+  --shadow-1:0 1px 3px rgba(16,31,28,.08),0 4px 14px rgba(16,31,28,.06);
+  --shadow-2:0 4px 10px rgba(16,31,28,.12),0 12px 32px rgba(16,31,28,.12);
+  --radius-s:10px; --radius-m:16px; --radius-l:24px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:20px; --space-5:32px; --space-6:52px;
+  --touch-min:44px;
+  --dur-fast:150ms; --dur-med:280ms;
+  --ease:cubic-bezier(.33,1,.68,1);
+  --font:'Noto Sans Lao',system-ui,-apple-system,'Lao Sangam MN',sans-serif;
+}
+[data-theme="dark"]{
+  --bg-page:#0c1310;
+  --bg-surface:#151f1a;
+  --bg-sunken:#0f1814;
+  --text-primary:#e6efe8;
+  --text-secondary:#a7bcae;
+  --text-tertiary:#7d9385;
+  --border:rgba(230,239,232,.14);
+  --border-strong:rgba(230,239,232,.45);
+  --interactive:var(--forest-400);
+  --interactive-hover:var(--forest-300);
+  --interactive-soft:rgba(90,163,116,.14);
+  --interactive-text:var(--forest-300);
+  --locked-text:var(--sun-300);
+  --locked-soft:rgba(232,184,24,.14);
+  --danger:var(--ember-400);
+  --danger-text:var(--ember-300);
+  --danger-soft:rgba(220,86,66,.15);
+  --success-soft:rgba(90,163,116,.16);
+  --success-text:var(--forest-200);
+  --hero-a:var(--forest-800);
+  --hero-b:#0a1411;
+  --switch-off:var(--forest-400);
+  --switch-on:var(--gold);
+  --shadow-1:0 1px 3px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);
+  --shadow-2:0 4px 10px rgba(0,0,0,.5),0 12px 32px rgba(0,0,0,.45);
+}
+@media (prefers-reduced-motion: reduce){
+  :root{--dur-fast:0ms; --dur-med:0ms}
+  *{scroll-behavior:auto !important}
+}
+
+*{box-sizing:border-box; margin:0; padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);
+  background:var(--bg-page);
+  color:var(--text-primary);
+  line-height:1.618;
+  min-height:100dvh;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+input,textarea,select{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--interactive); outline-offset:2px; border-radius:4px}
+/* บนพื้น hero เขียวเข้ม outline เขียวมองไม่เห็น (1.35:1) — ใช้ทอง (≈6.9:1) */
+.hero :focus-visible{outline-color:var(--gold)}
+img{max-width:100%; display:block}
+[hidden]{display:none !important}
+.sr-only{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
+/* แถบทึบใต้ status bar ของ iOS standalone — กันตัวหนังสือนาฬิกาขาวจมพื้นสว่างตอน scroll */
+.statusbar-cover{position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top); background:var(--hero-a); z-index:40}
+
+/* ── Hero header ── */
+.hero{
+  background:linear-gradient(160deg,var(--hero-a),var(--hero-b));
+  color:var(--text-inverse);
+  padding:calc(env(safe-area-inset-top) + var(--space-4)) var(--space-4) var(--space-6);
+  border-radius:0 0 var(--radius-l) var(--radius-l);
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{ /* แสงทองจางๆ มุมขวาให้มีมิติ */
+  content:""; position:absolute; right:-60px; top:-40px; width:280px; height:280px;
+  background:radial-gradient(circle at 35% 30%, rgba(232,184,24,.16), transparent 60%);
+  pointer-events:none;
+}
+.hero-top{
+  display:flex; align-items:center; gap:var(--space-3);
+  max-width:1080px; margin:0 auto;
+}
+.emblem{flex:none; width:52px; height:52px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+.hero-title{min-width:0; flex:1}
+.hero-title h1{font-size:clamp(1.05rem,.9rem + 1vw,1.4rem); font-weight:700; line-height:1.3}
+.hero-title p{font-size:.8rem; opacity:.82; line-height:1.45; margin-top:2px}
+.hero-actions{margin-left:auto; display:flex; gap:var(--space-2)}
+.icon-btn{
+  width:var(--touch-min); height:var(--touch-min);
+  display:grid; place-items:center;
+  border-radius:50%;
+  background:rgba(255,255,255,.12);
+  transition:background var(--dur-fast) var(--ease);
+}
+.icon-btn:hover{background:rgba(255,255,255,.22)}
+.icon-btn svg{width:22px; height:22px; fill:currentColor}
+
+/* ── Module tabs (สลับระบบ บริษัท / ผู้ต้องหา) ── */
+.mod-tabs{
+  display:flex; gap:4px;
+  max-width:1080px; margin:var(--space-4) auto 0;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:999px; padding:4px;
+}
+.mod-tab{
+  flex:1; min-height:40px;
+  border-radius:999px;
+  font-weight:700; font-size:.95rem;
+  color:rgba(255,255,255,.85);
+  transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.mod-tab[aria-pressed="true"]{background:#fff; color:var(--forest-700)}
+[data-theme="dark"] .mod-tab[aria-pressed="true"]{background:var(--forest-300); color:#0c1310}
+
+/* ── Stats ── */
+.stats{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-3);
+  max-width:1080px; margin:var(--space-3) auto 0;
+}
+.stat{
+  min-height:var(--touch-min);
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.14);
+  backdrop-filter:blur(6px);
+  border-radius:var(--radius-m);
+  padding:var(--space-3) var(--space-3);
+  text-align:start;
+  transition:transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.stat:hover{background:rgba(255,255,255,.18)}
+.stat[aria-pressed="true"]{background:rgba(255,255,255,.24); border-color:var(--gold)}
+.stat .num{font-size:clamp(1.4rem,1.2rem + 1vw,1.9rem); font-weight:700; line-height:1.2}
+.stat .lbl{font-size:.8rem; opacity:.85; display:flex; align-items:center; gap:6px}
+.stat .dot{width:8px; height:8px; border-radius:50%; flex:none}
+.dot-all{background:#fff}
+.dot-active{background:var(--forest-300)}
+.dot-locked{background:var(--gold)}
+
+/* ── Toolbar (search + filter) ── */
+.toolbar{
+  max-width:1080px;
+  margin:calc(-1 * var(--space-5)) auto 0;
+  padding:0 var(--space-4);
+  position:relative; z-index:2;
+}
+.search-card{
+  background:var(--bg-surface);
+  border-radius:var(--radius-m);
+  box-shadow:var(--shadow-1);
+  border:1px solid var(--border);
+  padding:var(--space-2);
+  display:flex; flex-wrap:wrap; gap:var(--space-2); align-items:center;
+}
+.search-wrap{flex:1 1 240px; position:relative; display:flex; align-items:center}
+.search-wrap svg{position:absolute; left:14px; width:18px; height:18px; fill:var(--text-tertiary); pointer-events:none}
+#searchInput{
+  width:100%; height:var(--touch-min);
+  border:none; background:var(--bg-sunken);
+  border-radius:999px;
+  padding:0 var(--space-4) 0 44px;
+  font-size:.95rem;
+}
+#searchInput::placeholder{color:var(--text-tertiary)}
+.chips{display:flex; gap:var(--space-2)}
+.chip{
+  height:var(--touch-min); padding:0 var(--space-3);
+  border-radius:999px;
+  border:1px solid var(--border);
+  font-size:.88rem; font-weight:600;
+  color:var(--text-secondary);
+  display:flex; align-items:center; gap:6px;
+  transition:all var(--dur-fast) var(--ease);
+  white-space:nowrap;
+}
+.chip[aria-pressed="true"]{
+  background:var(--interactive); color:#fff; border-color:var(--interactive);
+}
+[data-theme="dark"] .chip[aria-pressed="true"]{color:#0c1310}
+/* ตัวกรองตามหมวด (โหมดผู้ต้องหา) */
+.cat-filter{
+  height:var(--touch-min); padding:0 var(--space-3);
+  border-radius:999px;
+  border:1px solid var(--border-strong);
+  background:var(--bg-surface);
+  color:var(--text-secondary);
+  font-size:.88rem; font-weight:600;
+  max-width:100%;
+}
+.cat-filter:focus{border-color:var(--interactive); outline:none}
+
+/* ── Breadcrumb (ในกลุ่มผู้ต้องหา) ── */
+.crumb{
+  max-width:1080px; margin:var(--space-4) auto 0;
+  padding:0 var(--space-4);
+  display:flex; align-items:center; gap:var(--space-2);
+}
+.crumb-back{
+  display:inline-flex; align-items:center; gap:2px;
+  min-height:var(--touch-min); padding:0 var(--space-3) 0 var(--space-2);
+  border-radius:999px; border:1px solid var(--border-strong);
+  font-weight:700; font-size:.9rem; color:var(--text-secondary);
+  flex:none;
+}
+.crumb-back:hover{background:var(--bg-sunken)}
+.crumb-back svg{width:20px; height:20px; fill:currentColor}
+.crumb-name{flex:1; min-width:0; font-weight:700; font-size:1.05rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.crumb-actions{display:flex; gap:var(--space-1); flex:none}
+.crumb-act{
+  width:var(--touch-min); height:var(--touch-min);
+  border-radius:50%; display:grid; place-items:center;
+  color:var(--text-secondary);
+}
+.crumb-act:hover{background:var(--interactive-soft); color:var(--interactive-text)}
+.crumb-act.danger:hover{background:var(--danger-soft); color:var(--danger-text)}
+.crumb-act svg{width:19px; height:19px; fill:currentColor}
+
+/* ── Card grid ── */
+.grid{
+  max-width:1080px; margin:var(--space-4) auto var(--space-6);
+  padding:0 var(--space-4) 100px;
+  display:grid; gap:var(--space-3);
+  grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));
+}
+.card{
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-m);
+  box-shadow:var(--shadow-1);
+  padding:var(--space-3);
+  display:flex; flex-direction:column; gap:var(--space-2);
+  cursor:pointer;
+  position:relative;
+  transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  animation:cardIn var(--dur-med) var(--ease) both;
+}
+@keyframes cardIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+.card:hover{transform:translateY(-2px); box-shadow:var(--shadow-2)}
+.card.is-locked{border-inline-start:4px solid var(--gold)}
+/* แถวหัว: ชื่อ (ยืด) + ปุ่มล็อก */
+.card-head{display:flex; align-items:center; gap:var(--space-2)}
+/* หมายเลขลำดับกลุ่ม */
+.card-no{
+  flex:none; min-width:26px; height:26px; padding:0 6px;
+  border-radius:999px;
+  background:var(--interactive-soft); color:var(--interactive-text);
+  font-size:.8rem; font-weight:700;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.card-name{flex:1; min-width:0; font-weight:700; font-size:1.02rem; line-height:1.5}
+/* ชื่อบริษัท = ปุ่มจริง (คีย์บอร์ด/SR ใช้ได้) ขยาย hit area คลุมทั้งการ์ดด้วย ::after */
+.card-open{
+  display:block; font:inherit; font-weight:700; color:inherit; text-align:start;
+  padding:0; width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.card-open::after{content:""; position:absolute; inset:0; border-radius:var(--radius-m)}
+.card-open:focus-visible{outline:none}
+.card-open:focus-visible::after{outline:3px solid var(--interactive); outline-offset:-2px}
+/* แถวข้อมูล: ประเภท · ที่ตั้ง + สถานะ + ไฟล์ (แบนบรรทัดเดียว) */
+.card-meta{display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap; min-width:0}
+.card-sub{flex:1; min-width:80px; font-size:.83rem; color:var(--text-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+/* ปุ่มโทร + WhatsApp บนการ์ด */
+.card-actions{
+  display:flex; gap:var(--space-2);
+  position:relative; z-index:1; /* ลอยเหนือ overlay เปิด detail */
+}
+.card-call{
+  flex:1; min-width:0; min-height:var(--touch-min);
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  border-radius:999px;
+  background:var(--interactive-soft); color:var(--interactive-text);
+  font-size:.9rem; font-weight:700;
+  padding:0 var(--space-3);
+  text-decoration:none;
+  transition:all var(--dur-fast) var(--ease);
+}
+.card-call:hover{background:var(--interactive); color:#fff}
+[data-theme="dark"] .card-call:hover{color:#0c1310}
+.card-call svg{flex:none; width:16px; height:16px; fill:currentColor}
+.card-call .cp-num{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card-wa{
+  flex:none; width:var(--touch-min); height:var(--touch-min);
+  border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--wa); color:#fff;
+  text-decoration:none;
+  transition:filter var(--dur-fast) var(--ease);
+}
+.card-wa:hover{filter:brightness(1.12)}
+.card-wa svg{width:22px; height:22px; fill:currentColor}
+.badge{
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:.75rem; font-weight:700;
+  padding:3px 10px; border-radius:999px;
+  white-space:nowrap;
+}
+.badge svg{width:12px; height:12px; fill:currentColor}
+.badge-locked{background:var(--locked-soft); color:var(--locked-text)}
+.badge-active{background:var(--success-soft); color:var(--success-text)}
+.badge-files{background:var(--bg-sunken); color:var(--text-secondary)}
+.lock-btn{
+  flex:none; width:var(--touch-min); height:var(--touch-min);
+  border-radius:50%;
+  display:grid; place-items:center;
+  color:var(--text-tertiary);
+  transition:all var(--dur-fast) var(--ease);
+  position:relative; z-index:1; /* ลอยเหนือ overlay เปิด detail */
+}
+.lock-btn:hover{background:var(--interactive-soft); color:var(--interactive-text)}
+.lock-btn.is-locked{color:var(--locked-text); background:var(--locked-soft)}
+.lock-btn svg{width:20px; height:20px; fill:currentColor}
+
+/* ── Empty state ── */
+.empty{
+  grid-column:1/-1;
+  text-align:center;
+  padding:var(--space-6) var(--space-4);
+  color:var(--text-tertiary);
+}
+.empty svg{width:88px; height:88px; margin:0 auto var(--space-3); opacity:.5}
+.empty h2{font-size:1.1rem; color:var(--text-secondary); font-weight:600}
+.empty p{font-size:.9rem}
+
+/* ── FAB ── */
+.fab{
+  position:fixed;
+  right:calc(env(safe-area-inset-right) + var(--space-4));
+  bottom:calc(env(safe-area-inset-bottom) + var(--space-4));
+  width:60px; height:60px;
+  border-radius:20px;
+  background:linear-gradient(145deg,var(--forest-500),var(--forest-700));
+  color:#fff;
+  box-shadow:0 6px 20px rgba(16,31,28,.35);
+  display:grid; place-items:center;
+  transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  z-index:5;
+}
+.fab:hover{transform:scale(1.06)}
+.fab:active{transform:scale(.95)}
+.fab svg{width:26px; height:26px; fill:currentColor}
+
+/* ── Dialogs ── */
+dialog{
+  border:none;
+  border-radius:var(--radius-l);
+  background:var(--bg-surface);
+  color:var(--text-primary);
+  box-shadow:var(--shadow-2);
+  padding:0;
+  width:min(560px,calc(100vw - 32px));
+  max-height:calc(100dvh - 48px);
+  margin:auto;
+}
+/* dialog ที่เปิด = flex column: head/foot อยู่กับที่, body เป็นตัวเดียวที่ scroll
+   (ต้องเจาะจง [open] ไม่งั้น dialog ที่ปิดจะไม่ถูก UA ซ่อน แล้วโผล่ค้าง)
+   ก่อนหน้านี้ dialog เป็น block+overflow → sticky header ทับฟิลด์แรกบนมือถือ */
+dialog[open]{display:flex; flex-direction:column}
+dialog::backdrop{background:rgba(9,17,14,.55); backdrop-filter:blur(3px)}
+.dlg-head{
+  display:flex; align-items:center; gap:var(--space-3);
+  padding:var(--space-4) var(--space-4) var(--space-3);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:var(--bg-surface); z-index:2;
+  border-radius:var(--radius-l) var(--radius-l) 0 0;
+}
+.dlg-head h2{font-size:1.15rem; font-weight:700; flex:1}
+.dlg-body{padding:var(--space-4); overflow-y:auto; overflow-x:hidden; flex:1 1 auto; min-height:0}
+.dlg-foot{
+  display:flex; gap:var(--space-2); justify-content:flex-end;
+  padding:var(--space-3) var(--space-4) calc(env(safe-area-inset-bottom) + var(--space-3));
+  border-top:1px solid var(--border);
+  position:sticky; bottom:0; background:var(--bg-surface);
+  border-radius:0 0 var(--radius-l) var(--radius-l);
+}
+dialog form{display:contents}
+
+/* ── Buttons ── */
+.btn{
+  min-height:var(--touch-min);
+  padding:0 var(--space-4);
+  border-radius:999px;
+  font-weight:700; font-size:.95rem;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  transition:all var(--dur-fast) var(--ease);
+}
+.btn svg{width:18px; height:18px; fill:currentColor}
+.btn-primary{background:var(--interactive); color:#fff}
+.btn-primary:hover{background:var(--interactive-hover)}
+[data-theme="dark"] .btn-primary{color:#0c1310}
+.btn-ghost{color:var(--text-secondary); border:1px solid var(--border-strong)}
+.btn-ghost:hover{background:var(--bg-sunken)}
+.btn-danger{background:var(--danger); color:#fff}
+[data-theme="dark"] .btn-danger{color:#0c1310} /* ขาวบน ember-400 ได้แค่ 3.85:1 */
+.btn-danger:hover{filter:brightness(1.1)}
+.btn-gold{background:var(--gold); color:var(--sun-800)}
+.btn-gold:hover{filter:brightness(1.05)}
+.btn[disabled]{opacity:.45; cursor:not-allowed}
+
+/* ── Form ── */
+.field{margin-bottom:var(--space-3)}
+.field label{display:block; font-size:.85rem; font-weight:600; color:var(--text-secondary); margin-bottom:6px}
+.field label .req{color:var(--danger-text)}
+.input, .field textarea, .field select{
+  width:100%; min-height:var(--touch-min);
+  border:1.5px solid var(--border-strong);
+  border-radius:var(--radius-s);
+  padding:10px var(--space-3);
+  background:var(--bg-surface);
+  font-size:.95rem;
+}
+.input:focus, .field textarea:focus, .field select:focus{border-color:var(--interactive); outline:none}
+.field textarea{resize:vertical; min-height:84px}
+.field select:disabled{opacity:.5; background:var(--bg-sunken)}
+.field .hint{font-size:.78rem; color:var(--text-tertiary); margin-top:4px}
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3)}
+@media (max-width:480px){.field-row{grid-template-columns:1fr}}
+.label-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px}
+.label-row label{margin-bottom:0}
+.label-action{
+  font-size:.8rem; font-weight:600; color:var(--interactive-text);
+  min-height:32px; padding:0 var(--space-2);
+  display:inline-flex; align-items:center; gap:4px;
+  border-radius:var(--radius-s);
+}
+.label-action:hover{background:var(--interactive-soft)}
+.label-action svg{width:14px; height:14px; fill:currentColor}
+/* checkbox "ข้ามก่อน" ข้างป้ายวันที่ */
+.skip-check{
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:.8rem; font-weight:600; color:var(--text-secondary);
+  margin-bottom:0; cursor:pointer; user-select:none;
+  min-height:32px;
+}
+.skip-check input{width:18px; height:18px; accent-color:var(--interactive); cursor:pointer}
+/* ช่องวันที่ที่ถูกข้าม = จางลง */
+.input:disabled{opacity:.5; cursor:not-allowed; background:var(--bg-sunken)}
+.phone-row{display:flex; gap:var(--space-2); margin-bottom:var(--space-2)}
+.phone-row .input{flex:1}
+.phone-del{
+  flex:none; width:var(--touch-min); height:var(--touch-min);
+  border-radius:var(--radius-s);
+  display:grid; place-items:center;
+  color:var(--danger-text);
+}
+.phone-del:hover{background:var(--danger-soft)}
+.phone-del svg{width:18px; height:18px; fill:currentColor}
+.add-phone{
+  color:var(--interactive-text); font-weight:600; font-size:.9rem;
+  min-height:var(--touch-min); display:inline-flex; align-items:center; gap:6px;
+}
+
+/* ── ไฟล์แนบ ── */
+.file-list{display:flex; flex-direction:column; gap:var(--space-2); margin-bottom:var(--space-2)}
+.file-row{
+  display:flex; align-items:center; gap:var(--space-3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-s);
+  padding:var(--space-2) var(--space-3);
+  min-height:var(--touch-min);
+  background:var(--bg-surface);
+}
+.file-ext{
+  flex:none; width:40px; height:40px;
+  border-radius:8px;
+  background:var(--interactive-soft); color:var(--interactive-text);
+  display:grid; place-items:center;
+  font-size:.62rem; font-weight:700; letter-spacing:.02em;
+}
+.file-ext.is-pdf{background:var(--danger-soft); color:var(--danger-text)}
+.file-ext.is-img{background:var(--locked-soft); color:var(--locked-text)}
+.file-meta{flex:1; min-width:0}
+.file-name{font-size:.88rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.file-size{font-size:.75rem; color:var(--text-tertiary)}
+a.file-row{text-decoration:none; color:inherit; transition:border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease)}
+a.file-row:hover{border-color:var(--interactive); background:var(--interactive-soft)}
+a.file-row .open-ico{flex:none; width:18px; height:18px; fill:var(--text-tertiary)}
+
+/* ── Detail ── */
+.detail-name{font-size:1.3rem; font-weight:700; line-height:1.45; margin-bottom:var(--space-1); overflow-wrap:anywhere}
+.detail-badges{display:flex; gap:var(--space-2); flex-wrap:wrap; margin-bottom:var(--space-3)}
+.info-row{
+  display:flex; gap:var(--space-3); align-items:flex-start;
+  padding:var(--space-2) 0;
+  border-bottom:1px solid var(--border);
+  font-size:.93rem;
+}
+.info-row:last-child{border-bottom:none}
+.info-row > svg{flex:none; width:19px; height:19px; fill:var(--text-tertiary); margin-top:3px}
+.info-row .k{flex:none; width:106px; color:var(--text-tertiary); font-size:.85rem; padding-top:1px}
+.info-row .v{flex:1; min-width:0; word-break:break-word; white-space:pre-wrap}
+.info-row .v a{color:var(--interactive-text); font-weight:600; text-decoration:none}
+.info-row .v a:hover{text-decoration:underline}
+.info-row .v a.file-row:hover{text-decoration:none}
+.lock-panel{
+  margin:var(--space-3) 0;
+  border-radius:var(--radius-m);
+  padding:var(--space-3);
+  display:flex; align-items:center; gap:var(--space-3);
+  background:var(--success-soft);
+  transition:background var(--dur-med) var(--ease);
+}
+.lock-panel.is-locked{background:var(--locked-soft)}
+.lock-panel .lock-info{flex:1; min-width:0}
+.lock-panel .lock-state{font-weight:700; font-size:.95rem}
+.lock-panel .lock-meta{font-size:.8rem; color:var(--text-secondary); word-break:break-word}
+/* สวิตช์ล็อค — toggle ใหญ่ กดง่าย */
+.switch{
+  flex:none; width:64px; height:36px;
+  border-radius:999px;
+  background:var(--switch-off);
+  position:relative;
+  transition:background var(--dur-med) var(--ease);
+}
+.switch::before{content:""; position:absolute; inset:-8px -4px} /* hit area ≥44px */
+.switch::after{
+  content:""; position:absolute; top:3px; left:3px;
+  width:30px; height:30px; border-radius:50%;
+  background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+  transition:transform var(--dur-med) var(--ease);
+}
+.switch[aria-checked="true"]{background:var(--switch-on)}
+.switch[aria-checked="true"]::after{transform:translateX(28px)}
+.detail-actions{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr));
+  gap:var(--space-2); margin-top:var(--space-3);
+}
+.action-tile{
+  min-height:60px;
+  border-radius:var(--radius-s);
+  border:1px solid var(--border);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  font-size:.8rem; font-weight:600;
+  color:var(--text-secondary);
+  text-decoration:none;
+  transition:all var(--dur-fast) var(--ease);
+}
+.action-tile:hover{background:var(--interactive-soft); color:var(--interactive-text); border-color:var(--interactive)}
+.action-tile.danger:hover{background:var(--danger-soft); color:var(--danger-text); border-color:var(--danger)}
+.action-tile svg{width:20px; height:20px; fill:currentColor}
+.action-tile[aria-disabled="true"]{opacity:.4; pointer-events:none}
+
+/* ── ประวัติล็อค (ใน detail + รายงานรวม) ── */
+.log-item{margin-bottom:var(--space-2)}
+.log-item .log-when{margin-inline-start:var(--space-1); font-size:.85rem}
+.log-item .log-reason{font-size:.8rem; color:var(--text-tertiary)}
+.report-row{
+  width:100%; text-align:start;
+  display:flex; gap:var(--space-3); align-items:flex-start;
+  border:1px solid var(--border);
+  border-radius:var(--radius-s);
+  padding:var(--space-2) var(--space-3);
+  margin-bottom:var(--space-2);
+  transition:all var(--dur-fast) var(--ease);
+}
+.report-row:hover{border-color:var(--interactive); background:var(--interactive-soft)}
+.report-row .badge{flex:none; margin-top:2px}
+.report-meta{flex:1; min-width:0}
+.report-name{display:block; font-weight:700; font-size:.92rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.report-when{display:block; font-size:.83rem; color:var(--text-secondary)}
+.report-reason{display:block; font-size:.8rem; color:var(--text-tertiary); word-break:break-word}
+
+/* ── Confirm ── */
+.confirm-icon{
+  width:56px; height:56px; margin:0 auto var(--space-3);
+  border-radius:50%;
+  display:grid; place-items:center;
+}
+.confirm-icon svg{width:26px; height:26px; fill:currentColor}
+.confirm-icon.tone-lock{background:var(--locked-soft); color:var(--locked-text)}
+.confirm-icon.tone-unlock{background:var(--success-soft); color:var(--success-text)}
+.confirm-icon.tone-danger{background:var(--danger-soft); color:var(--danger-text)}
+#confirmDialog .dlg-body{text-align:center}
+#confirmTitle{font-size:1.1rem; font-weight:700; margin-bottom:var(--space-1)}
+#confirmDesc{font-size:.9rem; color:var(--text-secondary)}
+#confirmReasonWrap{margin-top:var(--space-3); text-align:start}
+
+/* ── จัดการประเภทธุรกิจ ── */
+.cat-row{display:flex; gap:var(--space-2); margin-bottom:var(--space-2)}
+.cat-row .input{flex:1}
+.cat-add{display:flex; gap:var(--space-2); margin-top:var(--space-3); padding-top:var(--space-3); border-top:1px dashed var(--border-strong)}
+.cat-add .input{flex:1}
+
+/* ── Menu ── */
+.menu{
+  position:fixed; z-index:20;
+  background:var(--bg-surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-m);
+  box-shadow:var(--shadow-2);
+  padding:var(--space-1);
+  min-width:230px;
+}
+.menu button{
+  width:100%; min-height:var(--touch-min);
+  display:flex; align-items:center; gap:var(--space-3);
+  padding:0 var(--space-3);
+  border-radius:var(--radius-s);
+  font-size:.93rem; font-weight:500;
+  text-align:start;
+}
+.menu button:hover{background:var(--interactive-soft)}
+.menu button svg{width:19px; height:19px; fill:var(--text-tertiary); flex:none}
+
+/* ── Toast (popover → อยู่ top layer เหนือ dialog เสมอ) ── */
+#toast{
+  position:fixed; inset:auto; margin:0; border:none;
+  left:50%; bottom:calc(env(safe-area-inset-bottom) + 96px);
+  transform:translateX(-50%) translateY(20px);
+  background:var(--forest-800); color:#fff;
+  padding:var(--space-2) var(--space-4);
+  border-radius:999px;
+  font-size:.9rem; font-weight:600;
+  box-shadow:var(--shadow-2);
+  opacity:0; pointer-events:none;
+  transition:opacity var(--dur-med) var(--ease), transform var(--dur-med) var(--ease);
+  z-index:30;
+  max-width:calc(100vw - 40px);
+  text-align:center;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+[data-theme="dark"] #toast{background:var(--forest-100); color:var(--forest-900)}
+
+@media (max-width:560px){
+  .hero{padding-bottom:var(--space-5)}
+  .hero-title p{display:none}
+  .stats{gap:var(--space-2)}
+  .stat{padding:var(--space-2) var(--space-3)}
+  .toolbar{margin-top:calc(-1 * var(--space-4))} /* กันการ์ดค้นหาชนปุ่มสถิติ */
+  /* bottom sheet — ยกหนีคีย์บอร์ด iOS ด้วย --kb จาก visualViewport */
+  dialog{width:100vw; max-width:none; margin:0; border-radius:var(--radius-l) var(--radius-l) 0 0; top:auto; position:fixed;
+    bottom:var(--kb, 0px); max-height:calc(100dvh - var(--kb, 0px))}
+  .dlg-head{border-radius:var(--radius-l) var(--radius-l) 0 0}
+  .dlg-foot{border-radius:0}
+}
+</style>
+</head>
+<body>
+<div class="statusbar-cover" aria-hidden="true"></div>
+
+<!-- ══ Header ══ -->
+<header class="hero">
+  <div class="hero-top">
+    <img class="emblem" src="icons/emblem-police.svg" alt="" aria-hidden="true">
+    <div class="hero-title">
+      <h1>ພະແນກຮັບແຈ້ງຄວາມ ແລະ ປະສານງານ</h1>
+      <p>ລະບົບເກັບຂໍ້ມູນ ແລະ ຄຸ້ມຄອງສະຖານະ</p>
+    </div>
+    <div class="hero-actions">
+      <button class="icon-btn" id="themeBtn" aria-label="ປ່ຽນໂໝດສີ">
+        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+      </button>
+      <button class="icon-btn" id="menuBtn" aria-label="ເມນູ" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="mod-tabs" role="tablist" aria-label="ເລືອກລະບົບ">
+    <button class="mod-tab" data-mod="company" role="tab" aria-pressed="true">ບໍລິສັດ</button>
+    <button class="mod-tab" data-mod="suspect" role="tab" aria-pressed="false">ຜູ້ຕ້ອງຫາ</button>
+  </div>
+  <div class="stats" role="group">
+    <button class="stat" data-filter="all" aria-pressed="true">
+      <div class="num" id="statTotal">0</div>
+      <div class="lbl"><span class="dot dot-all"></span><span>ທັງໝົດ</span></div>
+    </button>
+    <button class="stat" data-filter="active" aria-pressed="false">
+      <div class="num" id="statActive">0</div>
+      <div class="lbl"><span class="dot dot-active"></span><span>ປົກກະຕິ</span></div>
+    </button>
+    <button class="stat" data-filter="locked" aria-pressed="false">
+      <div class="num" id="statLocked">0</div>
+      <div class="lbl"><span class="dot dot-locked"></span><span>ຖືກລັອກ</span></div>
+    </button>
+  </div>
+</header>
+
+<!-- ══ Search + filter ══ -->
+<div class="toolbar">
+  <div class="search-card">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg>
+      <input id="searchInput" type="search" autocomplete="off" aria-label="ຄົ້ນຫາ" placeholder="ຄົ້ນຫາ ຊື່, ເບີໂທ, ເລກທະບຽນ…">
+    </div>
+    <div class="chips" role="group">
+      <button class="chip" data-filter="all" aria-pressed="true">ທັງໝົດ</button>
+      <button class="chip" data-filter="active" aria-pressed="false">ປົກກະຕິ</button>
+      <button class="chip" data-filter="locked" aria-pressed="false">ຖືກລັອກ</button>
+    </div>
+    <select id="sCatFilter" class="cat-filter" aria-label="ກັ່ນຕອງຕາມໝວດ" hidden></select>
+  </div>
+</div>
+
+<!-- ══ Breadcrumb (เข้ากลุ่มผู้ต้องหา) ══ -->
+<div id="crumb" class="crumb" hidden>
+  <button class="crumb-back" id="crumbBack" aria-label="ກັບຄືນລາຍຊື່ກຸ່ມ">
+    <svg viewBox="0 0 24 24"><path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12Z"/></svg>
+    <span>ກຸ່ມ</span>
+  </button>
+  <span class="crumb-name" id="crumbName"></span>
+  <div class="crumb-actions">
+    <button class="crumb-act" id="crumbEdit" aria-label="ແກ້ໄຂກຸ່ມ">
+      <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75ZM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75Z"/></svg>
+    </button>
+    <button class="crumb-act danger" id="crumbDelete" aria-label="ລຶບກຸ່ມ">
+      <svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1A2 2 0 0 1 15.1 22H8.9a2 2 0 0 1-2-1.9Z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══ List ══ -->
+<main class="grid" id="grid"></main>
+<div id="srStatus" role="status" class="sr-only"></div>
+
+<button class="fab" id="fabAdd" aria-label="ເພີ່ມບໍລິສັດ">
+  <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6Z"/></svg>
+</button>
+
+<!-- ══ Add/Edit dialog ══ -->
+<dialog id="formDialog" aria-labelledby="formTitle">
+  <form id="companyForm" method="dialog" novalidate>
+    <div class="dlg-head">
+      <h2 id="formTitle">ເພີ່ມບໍລິສັດ</h2>
+      <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+        <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+      </button>
+    </div>
+    <div class="dlg-body">
+      <div class="field">
+        <label for="fName">ຊື່ບໍລິສັດ <span class="req">*</span></label>
+        <input class="input" id="fName" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fRegNo">ເລກທະບຽນວິສາຫະກິດ</label>
+          <input class="input" id="fRegNo" inputmode="text">
+        </div>
+        <div class="field">
+          <div class="label-row">
+            <label for="fCategory">ປະເພດທຸລະກິດ</label>
+            <button type="button" class="label-action" id="manageCatBtn">
+              <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75ZM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75Z"/></svg>
+              ຈັດການປະເພດ
+            </button>
+          </div>
+          <input class="input" id="fCategory" list="categoryList" placeholder="ພິມ ຫຼື ເລືອກ…">
+          <datalist id="categoryList"></datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label for="phoneFirst">ເບີໂທລະສັບ</label>
+        <div id="phoneRows"></div>
+        <button type="button" class="add-phone" id="addPhoneBtn">＋ <span>ເພີ່ມເບີ</span></button>
+      </div>
+      <div class="field">
+        <label for="fEmail">ອີເມວ</label>
+        <input class="input" id="fEmail" type="email" inputmode="email">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fProvince">ແຂວງ</label>
+          <select id="fProvince"></select>
+        </div>
+        <div class="field">
+          <label for="fDistrict">ເມືອງ</label>
+          <select id="fDistrict" disabled></select>
+          <div class="hint">ເລືອກແຂວງກ່ອນ ລາຍຊື່ເມືອງຈະຂຶ້ນເອງ</div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fVillage">ບ້ານ</label>
+        <input class="input" id="fVillage" placeholder="ເຊັ່ນ: ບ້ານ ໂພນຕ້ອງ">
+      </div>
+      <div class="field">
+        <label for="fNotes">ໝາຍເຫດ</label>
+        <textarea id="fNotes" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label>ເອກະສານແນບ (PDF / ຮູບ / ໄຟລ໌ອື່ນໆ)</label>
+        <div class="file-list" id="fileList"></div>
+        <input type="file" id="filesInput" multiple hidden>
+        <button type="button" class="btn btn-ghost" id="addFilesBtn">
+          <svg viewBox="0 0 24 24"><path d="M16.5 6.5v9.55a4.5 4.5 0 0 1-9 0V5.25a3 3 0 0 1 6 0v9.3a1.5 1.5 0 0 1-3 0V6.5H9v8.05a3 3 0 0 0 6 0V5.25a4.5 4.5 0 0 0-9 0v10.8a6 6 0 0 0 12 0V6.5Z"/></svg>
+          ເລືອກໄຟລ໌
+        </button>
+        <div class="hint">ໄຟລ໌ລະບໍ່ເກີນ 25MB — ເກັບໄວ້ໃນເຄື່ອງ ບໍ່ໄດ້ອັບໂຫຼດຂຶ້ນອິນເຕີເນັດ</div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" data-close>ຍົກເລີກ</button>
+      <button type="submit" class="btn btn-primary" id="saveBtn">
+        <svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4Z"/></svg>
+        <span>ບັນທຶກ</span>
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ══ จัดการประเภทธุรกิจ ══ -->
+<dialog id="catDialog" aria-labelledby="catTitle">
+  <div class="dlg-head">
+    <h2 id="catTitle">ຈັດການປະເພດທຸລະກິດ</h2>
+    <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+      <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+    </button>
+  </div>
+  <div class="dlg-body">
+    <div id="catRows"></div>
+    <div class="cat-add">
+      <input class="input" id="catNew" placeholder="ເພີ່ມປະເພດໃໝ່…">
+      <button type="button" class="btn btn-ghost" id="catAddBtn">ເພີ່ມ</button>
+    </div>
+    <div class="hint" style="margin-top:var(--space-2)">ແກ້ໄຂຊື່ໄດ້ໃນຊ່ອງ — ການແກ້ໄຂບໍ່ປ່ຽນຂໍ້ມູນທີ່ບັນທຶກໄວ້ແລ້ວ</div>
+  </div>
+  <div class="dlg-foot">
+    <button type="button" class="btn btn-ghost" data-close>ຍົກເລີກ</button>
+    <button type="button" class="btn btn-primary" id="catSaveBtn">ບັນທຶກ</button>
+  </div>
+</dialog>
+
+<!-- ══ Detail dialog ══ -->
+<dialog id="detailDialog" aria-labelledby="detailHeadTitle">
+  <div class="dlg-head">
+    <h2 id="detailHeadTitle">ຂໍ້ມູນບໍລິສັດ</h2>
+    <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+      <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+    </button>
+  </div>
+  <div class="dlg-body" id="detailBody" style="padding-top:0"></div>
+</dialog>
+
+<!-- ══ Group add/edit dialog (กลุ่มผู้ต้องหา) ══ -->
+<dialog id="groupFormDialog" aria-labelledby="gFormTitle">
+  <form id="groupForm" method="dialog" novalidate>
+    <div class="dlg-head">
+      <h2 id="gFormTitle">ສ້າງກຸ່ມ</h2>
+      <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+        <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+      </button>
+    </div>
+    <div class="dlg-body">
+      <div class="field">
+        <label for="gName">ຊື່ກຸ່ມ <span class="req">*</span></label>
+        <input class="input" id="gName" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="gCount">ຈຳນວນຄົນ</label>
+          <input class="input" id="gCount" type="number" inputmode="numeric" min="0" step="1">
+        </div>
+        <div class="field">
+          <label for="gCreatedDate">ວັນທີ່ສ້າງກຸ່ມ</label>
+          <input class="input" id="gCreatedDate" type="date">
+        </div>
+      </div>
+      <div class="hint">ສ້າງກຸ່ມກ່ອນ ແລ້ວຈຶ່ງເຂົ້າໄປເພີ່ມຂໍ້ມູນຜູ້ຕ້ອງຫາໃນກຸ່ມ</div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" data-close>ຍົກເລີກ</button>
+      <button type="submit" class="btn btn-primary" id="gSaveBtn">
+        <svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4Z"/></svg>
+        <span>ບັນທຶກ</span>
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ══ Suspect add/edit dialog (ระบบผู้ต้องหา) ══ -->
+<dialog id="suspectFormDialog" aria-labelledby="sFormTitle">
+  <form id="suspectForm" method="dialog" novalidate>
+    <div class="dlg-head">
+      <h2 id="sFormTitle">ເພີ່ມຜູ້ຕ້ອງຫາ</h2>
+      <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+        <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+      </button>
+    </div>
+    <div class="dlg-body">
+      <div class="field">
+        <label for="sName">ຊື່ ແລະ ນາມສະກຸນ</label>
+        <input class="input" id="sName">
+      </div>
+      <!-- แถวแรก: วันที่ + สถานที่ถูกกักตัว (กรอกหรือไม่ก็ได้) -->
+      <div class="field-row">
+        <div class="field">
+          <label for="sDetainedAt">ວັນທີ່ຖືກກັກຕົວ</label>
+          <input class="input" id="sDetainedAt" type="date">
+        </div>
+        <div class="field">
+          <label for="sDetentionPlace">ສະຖານທີ່ຖືກກັກຕົວ</label>
+          <input class="input" id="sDetentionPlace">
+        </div>
+      </div>
+      <div class="field">
+        <div class="label-row">
+          <label for="sCategory">ໝວດ</label>
+          <button type="button" class="label-action" id="manageSCatBtn">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75ZM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75Z"/></svg>
+            ຈັດການໝວດ
+          </button>
+        </div>
+        <input class="input" id="sCategory" list="suspectCatList" placeholder="ພິມ ຫຼື ເລືອກໝວດ…">
+        <datalist id="suspectCatList"></datalist>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="sDob">ວັນ/ເດືອນ/ປີເກີດ</label>
+          <input class="input" id="sDob" type="date">
+        </div>
+        <div class="field">
+          <label for="sNationality">ສັນຊາດ</label>
+          <input class="input" id="sNationality" list="nationalityList" placeholder="ພິມ ຫຼື ເລືອກ…">
+          <datalist id="nationalityList"></datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label for="sBorderPass">ເລກທີ່ໜັງສືຜ່ານແດນ</label>
+        <input class="input" id="sBorderPass" inputmode="text">
+      </div>
+      <div class="field">
+        <label for="sCharge">ຂໍ້ກ່າວຫາ</label>
+        <textarea id="sCharge" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <label for="sHandlingUnit">ພາກສ່ວນດຳເນີນ</label>
+        <input class="input" id="sHandlingUnit">
+      </div>
+      <!-- ติ๊ก "ຂ້າມກ່ອນ" = ยังไม่ดำเนินการ ค่อยกลับมาแก้วันที่ทีหลัง -->
+      <div class="field-row">
+        <div class="field">
+          <div class="label-row">
+            <label for="sCaseClosedAt">ວັນທີ່ດຳເນີນຄະດີສຳເລັດ</label>
+            <label class="skip-check"><input type="checkbox" id="sCaseClosedSkip"> ຂ້າມກ່ອນ</label>
+          </div>
+          <input class="input" id="sCaseClosedAt" type="date">
+        </div>
+        <div class="field">
+          <div class="label-row">
+            <label for="sRepatriatedAt">ວັນທີ່ນຳສົ່ງກັບຄືນປະເທດ</label>
+            <label class="skip-check"><input type="checkbox" id="sRepatriatedSkip"> ຂ້າມກ່ອນ</label>
+          </div>
+          <input class="input" id="sRepatriatedAt" type="date">
+        </div>
+      </div>
+      <div class="field">
+        <label for="sExitCheckpoint">ດ່ານທີ່ສົ່ງອອກ</label>
+        <input class="input" id="sExitCheckpoint">
+      </div>
+      <div class="field">
+        <label>ເອກະສານແນບ (PDF / ຮູບ / ໄຟລ໌ອື່ນໆ)</label>
+        <div class="file-list" id="sFileList"></div>
+        <input type="file" id="sFilesInput" multiple hidden>
+        <button type="button" class="btn btn-ghost" id="sAddFilesBtn">
+          <svg viewBox="0 0 24 24"><path d="M16.5 6.5v9.55a4.5 4.5 0 0 1-9 0V5.25a3 3 0 0 1 6 0v9.3a1.5 1.5 0 0 1-3 0V6.5H9v8.05a3 3 0 0 0 6 0V5.25a4.5 4.5 0 0 0-9 0v10.8a6 6 0 0 0 12 0V6.5Z"/></svg>
+          ເລືອກໄຟລ໌
+        </button>
+        <div class="hint">ໄຟລ໌ລະບໍ່ເກີນ 25MB — ເກັບໄວ້ໃນເຄື່ອງ ບໍ່ໄດ້ອັບໂຫຼດຂຶ້ນອິນເຕີເນັດ</div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" data-close>ຍົກເລີກ</button>
+      <button type="submit" class="btn btn-primary" id="sSaveBtn">
+        <svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4Z"/></svg>
+        <span>ບັນທຶກ</span>
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ══ Suspect detail dialog ══ -->
+<dialog id="suspectDetailDialog" aria-labelledby="sDetailHeadTitle">
+  <div class="dlg-head">
+    <h2 id="sDetailHeadTitle">ຂໍ້ມູນຜູ້ຕ້ອງຫາ</h2>
+    <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+      <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+    </button>
+  </div>
+  <div class="dlg-body" id="sDetailBody" style="padding-top:0"></div>
+</dialog>
+
+<!-- ══ รายงานล็อค/ปลดล็อครวมทุกบริษัท ══ -->
+<dialog id="reportDialog" aria-labelledby="reportTitle">
+  <div class="dlg-head">
+    <h2 id="reportTitle">ລາຍງານ ລັອກ/ປົດລັອກ</h2>
+    <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+      <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+    </button>
+  </div>
+  <div class="dlg-body" id="reportBody"></div>
+</dialog>
+
+<!-- ══ Confirm dialog ══ -->
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+  <div class="dlg-body">
+    <div class="confirm-icon" id="confirmIcon"></div>
+    <div id="confirmTitle"></div>
+    <div id="confirmDesc"></div>
+    <div id="confirmReasonWrap" hidden>
+      <label for="confirmReason" style="display:block;font-size:.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px">ເຫດຜົນການລັອກ</label>
+      <input class="input" id="confirmReason" placeholder="ເຊັ່ນ: ຢູ່ລະຫວ່າງກວດສອບ…">
+    </div>
+  </div>
+  <div class="dlg-foot" style="justify-content:center">
+    <button type="button" class="btn btn-ghost" data-close>ຍົກເລີກ</button>
+    <button type="button" class="btn btn-primary" id="confirmOkBtn">ຕົກລົງ</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" popover="manual"></div>
+<input type="file" id="importInput" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+/* ============================================================
+   ข้อมูลอ้างอิง: 18 แขวง + เมือง (district) ของลาว
+   เก็บใน record: province = index ของ PROVINCES, district = ชื่อเมือง (string)
+   ============================================================ */
+const PROVINCES = [
+  'ນະຄອນຫຼວງວຽງຈັນ','ຜົ້ງສາລີ','ຫຼວງນ້ຳທາ','ອຸດົມໄຊ','ບໍ່ແກ້ວ','ຫຼວງພະບາງ',
+  'ຫົວພັນ','ໄຊຍະບູລີ','ຊຽງຂວາງ','ວຽງຈັນ','ບໍລິຄຳໄຊ','ຄຳມ່ວນ',
+  'ສະຫວັນນະເຂດ','ສາລະວັນ','ເຊກອງ','ຈຳປາສັກ','ອັດຕະປື','ໄຊສົມບູນ',
+];
+const DISTRICTS = [
+  /* 0 ນະຄອນຫຼວງວຽງຈັນ */ ['ຈັນທະບູລີ','ສີໂຄດຕະບອງ','ໄຊເສດຖາ','ສີສັດຕະນາກ','ນາຊາຍທອງ','ໄຊທານີ','ຫາດຊາຍຟອງ','ສັງທອງ','ປາກງື່ມ'],
+  /* 1 ຜົ້ງສາລີ */ ['ຜົ້ງສາລີ','ໃໝ່','ຂວາ','ສຳພັນ','ບຸນເໜືອ','ຍອດອູ','ບຸນໃຕ້'],
+  /* 2 ຫຼວງນ້ຳທາ */ ['ຫຼວງນ້ຳທາ','ສິງ','ລອງ','ວຽງພູຄາ','ນາແລ'],
+  /* 3 ອຸດົມໄຊ */ ['ໄຊ','ຫຼາ','ນາໝໍ້','ງາ','ແບງ','ຮຸນ','ປາກແບງ'],
+  /* 4 ບໍ່ແກ້ວ */ ['ຫ້ວຍຊາຍ','ຕົ້ນເຜິ້ງ','ເມິງ','ຜາອຸດົມ','ປາກທາ'],
+  /* 5 ຫຼວງພະບາງ */ ['ຫຼວງພະບາງ','ຊຽງເງິນ','ນານ','ປາກອູ','ນ້ຳບາກ','ງອຍ','ປາກແຊງ','ໂພນໄຊ','ຈອມເພັດ','ວຽງຄຳ','ພູຄູນ','ໂພນທອງ'],
+  /* 6 ຫົວພັນ */ ['ຊຳເໜືອ','ຊຽງຄໍ້','ຮ້ຽມ','ວຽງໄຊ','ຫົວເມືອງ','ຊຳໃຕ້','ສົບເບົາ','ແອດ','ກວັນ','ຊ່ອນ'],
+  /* 7 ໄຊຍະບູລີ */ ['ໄຊຍະບູລີ','ຄອບ','ຫົງສາ','ເງິນ','ຊຽງຮ່ອນ','ພຽງ','ປາກລາຍ','ແກ່ນທ້າວ','ບໍ່ແຕນ','ທົ່ງມີໄຊ','ໄຊສະຖານ'],
+  /* 8 ຊຽງຂວາງ */ ['ແປກ','ຄຳ','ໜອງແຮດ','ຄູນ','ໝອກໃໝ່','ພູກູດ','ຜາໄຊ'],
+  /* 9 ວຽງຈັນ */ ['ໂພນໂຮງ','ທຸລະຄົມ','ແກ້ວອຸດົມ','ກາສີ','ວັງວຽງ','ເຟືອງ','ຊະນະຄາມ','ແມດ','ຫີນເຫີບ','ວຽງຄຳ','ໝື່ນ'],
+  /* 10 ບໍລິຄຳໄຊ */ ['ປາກຊັນ','ທ່າພະບາດ','ປາກກະດິງ','ບໍລິຄັນ','ຄຳເກີດ','ວຽງທອງ','ໄຊຈຳພອນ'],
+  /* 11 ຄຳມ່ວນ */ ['ທ່າແຂກ','ມະຫາໄຊ','ໜອງບົກ','ຫີນບູນ','ຍົມມະລາດ','ບົວລະພາ','ນາກາຍ','ເຊບັ້ງໄຟ','ໄຊບົວທອງ','ຄູນຄຳ'],
+  /* 12 ສະຫວັນນະເຂດ */ ['ໄກສອນພົມວິຫານ','ອຸທຸມພອນ','ອາດສະພັງທອງ','ພີນ','ເຊໂປນ','ນອງ','ທ່າປາງທອງ','ສອງຄອນ','ຈຳພອນ','ຊົນນະບູລີ','ໄຊບູລີ','ວິລະບູລີ','ອາດສະພອນ','ໄຊພູທອງ','ພະລານໄຊ'],
+  /* 13 ສາລະວັນ */ ['ສາລະວັນ','ຕະໂອ້ຍ','ຕຸ້ມລານ','ລະຄອນເພັງ','ວາປີ','ຄົງເຊໂດນ','ເລົ່າງາມ','ສະໝ້ວຍ'],
+  /* 14 ເຊກອງ */ ['ລະມາມ','ກະລຶມ','ດັກຈຶງ','ທ່າແຕງ'],
+  /* 15 ຈຳປາສັກ */ ['ປາກເຊ','ຊະນະສົມບູນ','ບາຈຽງຈະເລີນສຸກ','ປາກຊ່ອງ','ປະທຸມພອນ','ໂພນທອງ','ຈຳປາສັກ','ສຸຂຸມາ','ມູນລະປະໂມກ','ໂຂງ'],
+  /* 16 ອັດຕະປື */ ['ໄຊເສດຖາ','ສາມັກຄີໄຊ','ສະໜາມໄຊ','ຊານໄຊ','ພູວົງ'],
+  /* 17 ໄຊສົມບູນ */ ['ອະນຸວົງ','ລ້ອງແຈ້ງ','ລ້ອງຊານ','ຮົ່ມ','ທ່າໂທມ'],
+];
+const DEFAULT_CATS = ['ການຄ້າ','ກໍ່ສ້າງ','ຂົນສົ່ງ','ການເງິນ','ທ່ອງທ່ຽວ','ອຸດສາຫະກຳ','ກະສິກຳ','ບໍລິການ','ພະລັງງານ','ໄອທີ'];
+const MAX_FILE = 25 * 1024 * 1024; // 25MB ต่อไฟล์
+
+/* ============================================================
+   IndexedDB
+   ============================================================ */
+const dbp = new Promise((resolve, reject) => {
+  const req = indexedDB.open('borisat', 3); // v3: เพิ่ม store 'groups' (กลุ่มผู้ต้องหา)
+  req.onupgradeneeded = () => {
+    const db = req.result;
+    if (!db.objectStoreNames.contains('companies')) db.createObjectStore('companies', { keyPath: 'id' });
+    if (!db.objectStoreNames.contains('suspects')) db.createObjectStore('suspects', { keyPath: 'id' });
+    if (!db.objectStoreNames.contains('groups')) db.createObjectStore('groups', { keyPath: 'id' });
+  };
+  req.onsuccess = () => resolve(req.result);
+  req.onerror = () => reject(req.error);
+});
+async function dbGetAll(store='companies'){
+  const db = await dbp;
+  return new Promise((res, rej) => {
+    const r = db.transaction(store).objectStore(store).getAll();
+    r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error);
+  });
+}
+async function dbPut(item, store='companies'){
+  const db = await dbp;
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store,'readwrite');
+    tx.objectStore(store).put(item);
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+async function dbDelete(id, store='companies'){
+  const db = await dbp;
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store,'readwrite');
+    tx.objectStore(store).delete(id);
+    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+  });
+}
+
+/* ============================================================
+   State
+   ============================================================ */
+let companies = [];
+let suspects = [];         // ระบบผู้ต้องหา (store 'suspects') — แต่ละคนมี groupId
+let groups = [];           // กลุ่มผู้ต้องหา (store 'groups')
+let currentGroupId = null; // null = ดูรายชื่อกลุ่ม; มีค่า = เข้าไปในกลุ่มนั้น (drill-in)
+let module = localStorage.getItem('borisat-module') === 'suspect' ? 'suspect' : 'company';
+let filter = 'all';        // ตัวกรองระบบบริษัท (all/active/locked)
+let sFilter = 'all';       // ตัวกรองสถานะผู้ต้องหาในกลุ่ม (all/detained/repatriated)
+let sCatFilter = '';       // ตัวกรองตามหมวดผู้ต้องหา ('' = ทุกหมวด)
+let search = '';
+let editingId = null;      // id ที่กำลังแก้ไขใน form บริษัท
+let sEditingId = null;     // id ที่กำลังแก้ไขใน form ผู้ต้องหา
+let groupEditingId = null; // id ที่กำลังแก้ไขใน form กลุ่ม
+let detailId = null;       // id ที่เปิดดูรายละเอียด
+let formFiles = [];        // [{id,name,type,size,blob}] ไฟล์แนบใน form
+let deferredInstall = null;
+let detailFileURLs = [];       // objectURL ชั่วคราวของไฟล์แนบใน detail — เพิกถอนตอนปิด
+
+/* ── config ต่อระบบ (module) ── */
+const MODULES = {
+  company: {
+    subtitle: 'ລະບົບເກັບຂໍ້ມູນ ແລະ ຄຸ້ມຄອງສະຖານະ',
+    searchPh: 'ຄົ້ນຫາ ຊື່, ເບີໂທ, ເລກທະບຽນ…',
+    fabLabel: 'ເພີ່ມບໍລິສັດ',
+    filters: [
+      { key:'all',    label:'ທັງໝົດ',  dot:'all' },
+      { key:'active', label:'ປົກກະຕິ', dot:'active' },
+      { key:'locked', label:'ຖືກລັອກ', dot:'locked' },
+    ],
+  },
+  suspect: {
+    subtitle: 'ລະບົບເກັບຂໍ້ມູນ ແລະ ຄຸ້ມຄອງສະຖິຕິຜູ້ຕ້ອງຫາ',
+    // ระดับ "รายชื่อกลุ่ม"
+    groupSearchPh: 'ຄົ້ນຫາ ຊື່ກຸ່ມ…',
+    fabGroupLabel: 'ສ້າງກຸ່ມ',
+    groupStats: [ // สถิติระดับกลุ่ม (แสดงอย่างเดียว ไม่กรอง)
+      { label:'ກຸ່ມ',       dot:'all' },
+      { label:'ຄົນທັງໝົດ',  dot:'locked' },
+      { label:'ສົ່ງກັບແລ້ວ', dot:'active' },
+    ],
+    // ระดับ "ในกลุ่ม" (ผู้ต้องหา)
+    searchPh: 'ຄົ້ນຫາ ຊື່, ສັນຊາດ, ເລກໜັງສືຜ່ານແດນ…',
+    fabLabel: 'ເພີ່ມຜູ້ຕ້ອງຫາ',
+    filters: [
+      { key:'all',         label:'ທັງໝົດ',    dot:'all' },
+      { key:'detained',    label:'ຖືກກັກຕົວ',  dot:'locked' },
+      { key:'repatriated', label:'ສົ່ງກັບແລ້ວ', dot:'active' },
+    ],
+  },
+};
+/* สัญชาติที่พบบ่อย (datalist ช่วยกรอก) */
+const NATIONALITIES = ['ລາວ','ໄທ','ຫວຽດນາມ','ຈີນ','ກຳປູເຈຍ','ມຽນມາ','ມາເລເຊຍ','ສິງກະໂປ','ອິນເດຍ','ບັງກະລາເທດ','ອື່ນໆ'];
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+
+function waNumber(p){
+  // wa.me ต้องการเบอร์สากลไม่มีเครื่องหมาย — เบอร์ลาวขึ้นต้น 0 เติม 856 ให้
+  let d = String(p || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('0')) d = '856' + d.slice(1);
+  return d;
+}
+/* วันที่ภาษาลาว — format เองไม่พึ่ง locale 'lo-LA' (หลายเครื่องไม่มี → หลุดเป็นอังกฤษ) */
+const LAO_MONTHS = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+function fmtDate(iso){
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${d.getDate()} ${LAO_MONTHS[d.getMonth()]} ${d.getFullYear()}, ${hh}:${mm}`;
+}
+/* วันที่อย่างเดียว (จาก <input type=date> = "YYYY-MM-DD") — parse เองไม่ให้ timezone เลื่อนวัน */
+function fmtDay(ymd){
+  if (!ymd) return '—';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
+  if (!m) return '—';
+  return `${Number(m[3])} ${LAO_MONTHS[Number(m[2])-1]} ${m[1]}`;
+}
+/* สถานะผู้ต้องหา — อนุมานจากวันที่ที่กรอก */
+function suspectStatus(s){
+  if (s.repatriatedAt) return 'repatriated';   // ส่งกลับประเทศแล้ว
+  return 'detained';                            // ยังอยู่ในความดูแล (รวมที่ดำเนินคดีเสร็จแต่ยังไม่ส่งกลับ)
+}
+function fmtBytes(n){
+  if (n == null) return '';
+  if (n < 1024) return n + ' B';
+  if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+  return (n/1024/1024).toFixed(1) + ' MB';
+}
+function fileExt(f){
+  const m = /\.([A-Za-z0-9]{1,5})$/.exec(f.name || '');
+  if (m) return m[1].toUpperCase();
+  if ((f.type||'').startsWith('image/')) return 'IMG';
+  if (f.type === 'application/pdf') return 'PDF';
+  return 'FILE';
+}
+function extClass(f){
+  if (f.type === 'application/pdf') return 'is-pdf';
+  if ((f.type||'').startsWith('image/')) return 'is-img';
+  return '';
+}
+function toast(msg){
+  const el = $('#toast');
+  el.textContent = msg;
+  // popover → toast อยู่ top layer มองเห็นแม้ dialog เปิดอยู่
+  if (el.showPopover){ try { el.showPopover(); } catch {} }
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => { if (el.hidePopover){ try { el.hidePopover(); } catch {} } }, 300);
+  }, 2400);
+}
+
+/* ============================================================
+   ประเภทธุรกิจ — ผู้ใช้เพิ่ม/แก้ไข/ลบเองได้ (localStorage)
+   ============================================================ */
+const CAT_KEY = 'borisat-categories';        // ประเภทธุรกิจ (บริษัท)
+const SCAT_KEY = 'borisat-suspect-cats';     // หมวดผู้ต้องหา (ผู้ใช้ตั้งเอง เริ่มว่าง)
+function loadCats(){
+  try {
+    const v = JSON.parse(localStorage.getItem(CAT_KEY));
+    if (Array.isArray(v)) return v.filter(x => typeof x === 'string' && x.trim());
+  } catch {}
+  return [...DEFAULT_CATS];
+}
+function loadSCats(){
+  try {
+    const v = JSON.parse(localStorage.getItem(SCAT_KEY));
+    if (Array.isArray(v)) return v.filter(x => typeof x === 'string' && x.trim());
+  } catch {}
+  return [];
+}
+function saveCats(list){ localStorage.setItem(CAT_KEY, JSON.stringify(list)); refreshCatList(); }
+function saveSCats(list){
+  localStorage.setItem(SCAT_KEY, JSON.stringify(list));
+  refreshSCatList();
+  if (module === 'suspect') syncModuleUI(); // อัปเดต dropdown กรองตามหมวด
+}
+function refreshCatList(){ $('#categoryList').innerHTML = loadCats().map(c => `<option value="${esc(c)}">`).join(''); }
+function refreshSCatList(){ $('#suspectCatList').innerHTML = loadSCats().map(c => `<option value="${esc(c)}">`).join(''); }
+function learnCat(name){ if (!name) return; const cats = loadCats(); if (!cats.includes(name)){ cats.push(name); saveCats(cats); } }
+function learnSCat(name){ if (!name) return; const cats = loadSCats(); if (!cats.includes(name)){ cats.push(name); saveSCats(cats); } }
+
+/* dialog จัดการหมวด — ใช้ร่วมทั้งประเภทธุรกิจ (บริษัท) และหมวดผู้ต้องหา ผ่าน catMode */
+let catMode = 'company';
+function catRow(val){
+  const row = document.createElement('div');
+  row.className = 'cat-row';
+  row.innerHTML = `<input class="input cat-input" value="${esc(val)}" aria-label="ຊື່ໝວດ">
+    <button type="button" class="phone-del" aria-label="ລຶບໝວດ"><svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1A2 2 0 0 1 15.1 22H8.9a2 2 0 0 1-2-1.9Z"/></svg></button>`;
+  row.querySelector('.phone-del').addEventListener('click', () => row.remove());
+  return row;
+}
+function openCatManager(mode){
+  catMode = mode;
+  const rows = $('#catRows'); rows.innerHTML = '';
+  (mode === 'suspect' ? loadSCats() : loadCats()).forEach(c => rows.appendChild(catRow(c)));
+  $('#catTitle').textContent = mode === 'suspect' ? 'ຈັດການໝວດຜູ້ຕ້ອງຫາ' : 'ຈັດການປະເພດທຸລະກິດ';
+  $('#catNew').placeholder = mode === 'suspect' ? 'ເພີ່ມໝວດໃໝ່…' : 'ເພີ່ມປະເພດໃໝ່…';
+  $('#catNew').value = '';
+  $('#catDialog').showModal();
+  setTimeout(() => $('#catNew').focus(), 50);
+}
+$('#manageCatBtn').addEventListener('click', () => openCatManager('company'));
+$('#manageSCatBtn').addEventListener('click', () => openCatManager('suspect'));
+$('#catAddBtn').addEventListener('click', () => {
+  const v = $('#catNew').value.trim();
+  if (!v) return;
+  $('#catRows').appendChild(catRow(v));
+  $('#catNew').value = '';
+  $('#catNew').focus();
+});
+$('#catNew').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); $('#catAddBtn').click(); }
+});
+$('#catSaveBtn').addEventListener('click', () => {
+  const list = [...new Set($$('#catRows .cat-input').map(i => i.value.trim()).filter(Boolean))];
+  if (catMode === 'suspect') saveSCats(list); else saveCats(list);
+  $('#catDialog').close();
+  toast('ບັນທຶກໝວດແລ້ວ ✓');
+});
+
+/* ============================================================
+   Theme (auto → dark → light)
+   ============================================================ */
+const THEME_KEY = 'borisat-theme';
+function applyTheme(){
+  const pref = localStorage.getItem(THEME_KEY) || 'auto';
+  const dark = pref === 'dark' || (pref === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? '#0a1411' : '#1a302a';
+}
+$('#themeBtn').addEventListener('click', () => {
+  const cur = localStorage.getItem(THEME_KEY) || 'auto';
+  const next = cur === 'auto' ? 'dark' : cur === 'dark' ? 'light' : 'auto';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme();
+  toast({auto:'ຕາມລະບົບ', dark:'ໂໝດມືດ 🌙', light:'ໂໝດແຈ້ງ ☀️'}[next]);
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+applyTheme();
+
+/* ============================================================
+   Render
+   ============================================================ */
+const ICON_LOCK = '<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 0 1 6 0v3Zm3 4a2 2 0 0 1 1 3.73V19h-2v-1.27A2 2 0 0 1 12 14Z"/></svg>';
+const ICON_UNLOCK = '<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 1 5 5h-2a3 3 0 0 0-6 0v3h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5Zm0 12a2 2 0 0 0-1 3.73V19h2v-1.27A2 2 0 0 0 12 14Z"/></svg>';
+const ICON_PHONE = '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.6 15.6 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1Z"/></svg>';
+const ICON_CLIP = '<svg viewBox="0 0 24 24"><path d="M16.5 6.5v9.55a4.5 4.5 0 0 1-9 0V5.25a3 3 0 0 1 6 0v9.3a1.5 1.5 0 0 1-3 0V6.5H9v8.05a3 3 0 0 0 6 0V5.25a4.5 4.5 0 0 0-9 0v10.8a6 6 0 0 0 12 0V6.5Z"/></svg>';
+const ICON_WA = '<svg viewBox="0 0 24 24"><path d="M12 2a9.9 9.9 0 0 0-8.6 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-2-1.2 7.5 7.5 0 0 1-1.4-1.7c-.1-.3 0-.4.1-.5l.4-.5c.1-.1.2-.3.3-.5a.5.5 0 0 0 0-.4c-.1-.1-.6-1.4-.8-1.9s-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 2.8 2.8 0 0 0-.9 2 4.9 4.9 0 0 0 1 2.6 11 11 0 0 0 4.3 3.7 14 14 0 0 0 1.4.5 3.4 3.4 0 0 0 1.6.1 2.6 2.6 0 0 0 1.7-1.2 2.1 2.1 0 0 0 .1-1.2c0-.1-.2-.1-.4-.2Z"/></svg>';
+
+function groupById(id){ return groups.find(g => g.id === id); }
+function groupSuspects(gid){ return suspects.filter(s => s.groupId === gid); }
+
+/* ทาสี stat/chip จาก config */
+function paintStats(items, activeKey){
+  $$('.stat').forEach((btn,i) => {
+    const f = items[i]; if (!f) return;
+    btn.dataset.filter = f.key || '';
+    btn.querySelector('.dot').className = 'dot dot-' + f.dot;
+    btn.querySelector('.lbl > span:last-child').textContent = f.label;
+    btn.setAttribute('aria-pressed', String(f.key != null && f.key === activeKey));
+  });
+}
+function paintChips(items, activeKey){
+  $$('.chip').forEach((btn,i) => {
+    const f = items[i]; if (!f) return;
+    btn.dataset.filter = f.key;
+    btn.textContent = f.label;
+    btn.setAttribute('aria-pressed', String(f.key === activeKey));
+  });
+}
+
+/* ปรับ label/placeholder/แท็บ/สถิติ/breadcrumb ตามระบบ + ระดับ (รายการกลุ่ม ↔ ในกลุ่ม) */
+function syncModuleUI(){
+  const cfg = MODULES[module];
+  const p = $('.hero-title p'); if (p) p.textContent = cfg.subtitle;
+  $$('.mod-tab').forEach(t => t.setAttribute('aria-pressed', String(t.dataset.mod === module)));
+  const chips = $('.chips'), catSel = $('#sCatFilter'), crumb = $('#crumb');
+  if (module === 'company'){
+    paintStats(cfg.filters, filter);
+    paintChips(cfg.filters, filter);
+    $('#searchInput').placeholder = cfg.searchPh;
+    $('#fabAdd').setAttribute('aria-label', cfg.fabLabel);
+    chips.hidden = false; catSel.hidden = true; crumb.hidden = true;
+    return;
+  }
+  // ── ระบบผู้ต้องหา ──
+  if (!currentGroupId){
+    // ระดับ "รายชื่อกลุ่ม"
+    paintStats(cfg.groupStats, null);
+    $('#searchInput').placeholder = cfg.groupSearchPh;
+    $('#fabAdd').setAttribute('aria-label', cfg.fabGroupLabel);
+    chips.hidden = true; catSel.hidden = true; crumb.hidden = true;
+  } else {
+    // ระดับ "ในกลุ่ม" (ผู้ต้องหา)
+    paintStats(cfg.filters, sFilter);
+    paintChips(cfg.filters, sFilter);
+    $('#searchInput').placeholder = cfg.searchPh;
+    $('#fabAdd').setAttribute('aria-label', cfg.fabLabel);
+    chips.hidden = false;
+    const cats = loadSCats();
+    if (sCatFilter && !cats.includes(sCatFilter)) sCatFilter = '';
+    catSel.innerHTML = `<option value="">ທຸກໝວດ</option>` + cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    catSel.value = sCatFilter;
+    catSel.hidden = cats.length === 0;
+    const g = groupById(currentGroupId);
+    crumb.hidden = false;
+    $('#crumbName').textContent = g ? g.name : '';
+  }
+}
+function setModule(m){
+  if (m === module || !MODULES[m]) return;
+  module = m;
+  localStorage.setItem('borisat-module', m);
+  search = ''; $('#searchInput').value = '';
+  currentGroupId = null; sFilter = 'all'; sCatFilter = '';
+  syncModuleUI();
+  render();
+}
+/* เข้ากลุ่ม / กลับไปรายชื่อกลุ่ม */
+function openGroup(gid){
+  if (!groupById(gid)) return;
+  currentGroupId = gid;
+  search = ''; $('#searchInput').value = ''; sFilter = 'all'; sCatFilter = '';
+  syncModuleUI(); render();
+  window.scrollTo(0, 0);
+}
+function backToGroups(){
+  currentGroupId = null;
+  search = ''; $('#searchInput').value = '';
+  syncModuleUI(); render();
+}
+$('#sCatFilter').addEventListener('change', e => { sCatFilter = e.target.value; render(); });
+
+function stats(){
+  if (module === 'company'){
+    const total = companies.length, locked = companies.filter(c => c.locked).length;
+    $('#statTotal').textContent = total;
+    $('#statActive').textContent = total - locked;
+    $('#statLocked').textContent = locked;
+  } else if (!currentGroupId){
+    // ระดับกลุ่ม: จำนวนกลุ่ม / คนทั้งหมด / ส่งกลับแล้ว
+    $('#statTotal').textContent = groups.length;
+    $('#statActive').textContent = suspects.length;
+    $('#statLocked').textContent = suspects.filter(s => suspectStatus(s) === 'repatriated').length;
+  } else {
+    // ในกลุ่ม: ทั้งหมด / ถูกกักตัว / ส่งกลับแล้ว (เฉพาะกลุ่มนี้)
+    const mem = groupSuspects(currentGroupId);
+    const rep = mem.filter(s => suspectStatus(s) === 'repatriated').length;
+    $('#statTotal').textContent = mem.length;
+    $('#statActive').textContent = mem.length - rep;
+    $('#statLocked').textContent = rep;
+  }
+}
+function provinceName(c){
+  if (c.province === '' || c.province == null) return '';
+  return PROVINCES[c.province] || '';
+}
+function visible(){
+  const q = search.trim().toLowerCase();
+  return companies
+    .filter(c => filter === 'all' || (filter === 'locked') === !!c.locked)
+    .filter(c => {
+      if (!q) return true;
+      return [c.name, c.regNo, c.category, c.address, c.district, c.notes, c.email, provinceName(c), (c.phones||[]).join(' ')]
+        .join(' ').toLowerCase().includes(q);
+    })
+    .sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||''));
+}
+function visibleGroups(){
+  const q = search.trim().toLowerCase();
+  return groups
+    .filter(g => !q || (g.name||'').toLowerCase().includes(q))
+    .sort((a,b) => (b.createdDate||b.createdAt||'').localeCompare(a.createdDate||a.createdAt||''));
+}
+function visibleSuspects(){
+  const q = search.trim().toLowerCase();
+  return suspects
+    .filter(s => s.groupId === currentGroupId) // เฉพาะผู้ต้องหาในกลุ่มที่เปิดอยู่
+    .filter(s => sFilter === 'all' || suspectStatus(s) === sFilter)
+    .filter(s => !sCatFilter || (s.category || '') === sCatFilter)
+    .filter(s => {
+      if (!q) return true;
+      return [s.name, s.category, s.nationality, s.borderPassNo, s.charge, s.detentionPlace, s.handlingUnit, s.exitCheckpoint]
+        .join(' ').toLowerCase().includes(q);
+    })
+    .sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||''));
+}
+function render(){
+  stats();
+  if (module === 'company') renderCompanies();
+  else if (currentGroupId) renderSuspects();
+  else renderGroups();
+}
+function renderGroups(){
+  const list = visibleGroups();
+  const grid = $('#grid');
+  $('#srStatus').textContent = search.trim() ? `ພົບ ${list.length} ກຸ່ມ` : '';
+  if (!groups.length){
+    grid.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <h2>ຍັງບໍ່ມີກຸ່ມ</h2><p>ກົດປຸ່ມ + ເພື່ອສ້າງກຸ່ມທຳອິດ</p></div>`;
+    return;
+  }
+  if (!list.length){ grid.innerHTML = `<div class="empty"><h2>ບໍ່ພົບກຸ່ມ</h2></div>`; return; }
+  grid.innerHTML = list.map((g,i) => {
+    const mem = groupSuspects(g.id);
+    const rep = mem.filter(s => suspectStatus(s) === 'repatriated').length;
+    const planned = (g.plannedCount === '' || g.plannedCount == null) ? null : g.plannedCount;
+    // บรรทัด 2: วันที่ (ไม่มีคำว่า "ສ້າງ") · สรุปสถานะ
+    const line2 = [g.createdDate ? fmtDay(g.createdDate) : '', `ຖືກກັກຕົວ ${mem.length - rep} · ສົ່ງກັບແລ້ວ ${rep}`].filter(Boolean).join(' · ');
+    return `<article class="card" data-gid="${esc(g.id)}">
+      <div class="card-head">
+        <span class="card-no">${i + 1}</span>
+        <div class="card-name"><button class="card-open" type="button">${esc(g.name)}</button></div>
+        <span class="badge badge-files">${mem.length}${planned != null ? '/' + esc(String(planned)) : ''} ຄົນ</span>
+      </div>
+      <div class="card-meta"><span class="card-sub">${esc(line2)}</span></div>
+    </article>`;
+  }).join('');
+}
+function renderCompanies(){
+  const list = visible();
+  const grid = $('#grid');
+  $('#srStatus').textContent = search.trim() ? `ພົບ ${list.length} ລາຍການ` : '';
+  if (!companies.length){
+    grid.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 48 48"><path d="M24 3 41 9V22C41 33 34 41 24 45 14 41 7 33 7 22V9Z" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M24 12l2.6 5.4 6 .8-4.4 4.1 1.1 5.9L24 25.4l-5.3 2.8 1.1-5.9-4.4-4.1 6-.8Z" fill="currentColor"/></svg>
+      <h2>ຍັງບໍ່ມີຂໍ້ມູນບໍລິສັດ</h2><p>ກົດປຸ່ມ + ເພື່ອເພີ່ມບໍລິສັດທຳອິດ</p></div>`;
+    return;
+  }
+  if (!list.length){
+    grid.innerHTML = `<div class="empty"><h2>ບໍ່ພົບຜົນການຄົ້ນຫາ</h2></div>`;
+    return;
+  }
+  grid.innerHTML = list.map((c,i) => {
+    const sub = [c.category, [c.district && 'ມ. ' + c.district, provinceName(c) && 'ຂ. ' + provinceName(c)].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    const phone = (c.phones||[])[0];
+    const nFiles = (c.files||[]).length;
+    return `<article class="card ${c.locked?'is-locked':''}" data-id="${esc(c.id)}">
+      <div class="card-head">
+        <span class="card-no">${i + 1}</span>
+        <div class="card-name"><button class="card-open" type="button">${esc(c.name)}</button></div>
+        <button class="lock-btn ${c.locked?'is-locked':''}" data-lock="${esc(c.id)}" data-stop
+          aria-label="${c.locked ? 'ປົດລັອກ' : 'ລັອກ'} ${esc(c.name)}" title="${c.locked ? 'ປົດລັອກ' : 'ລັອກ'}">
+          ${c.locked ? ICON_LOCK : ICON_UNLOCK}
+        </button>
+      </div>
+      <div class="card-meta">
+        ${c.locked
+          ? `<span class="badge badge-locked">${ICON_LOCK}ຖືກລັອກ</span>`
+          : `<span class="badge badge-active">ປົກກະຕິ</span>`}
+        ${nFiles ? `<span class="badge badge-files">${ICON_CLIP}${nFiles}</span>` : ''}
+        ${sub ? `<span class="card-sub">${esc(sub)}</span>` : ''}
+      </div>
+      ${phone ? `<div class="card-actions">
+        <a class="card-call" href="tel:${esc(phone.replace(/[^\d+]/g,''))}" data-stop>${ICON_PHONE}<span class="cp-num">${esc(phone)}</span></a>
+        <a class="card-wa" href="https://wa.me/${waNumber(phone)}" target="_blank" rel="noopener" data-stop aria-label="WhatsApp ${esc(c.name)}">${ICON_WA}</a>
+      </div>` : ''}
+    </article>`;
+  }).join('');
+}
+function renderSuspects(){ // = ผู้ต้องหาในกลุ่มที่เปิดอยู่
+  const list = visibleSuspects();
+  const grid = $('#grid');
+  $('#srStatus').textContent = search.trim() ? `ພົບ ${list.length} ລາຍການ` : '';
+  if (!groupSuspects(currentGroupId).length){
+    grid.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <h2>ຍັງບໍ່ມີຜູ້ຕ້ອງຫາໃນກຸ່ມນີ້</h2><p>ກົດປຸ່ມ + ເພື່ອເພີ່ມຜູ້ຕ້ອງຫາ</p></div>`;
+    return;
+  }
+  if (!list.length){
+    grid.innerHTML = `<div class="empty"><h2>ບໍ່ພົບຜົນການຄົ້ນຫາ</h2></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(s => {
+    const st = suspectStatus(s);
+    const sub = [s.nationality, s.charge].filter(Boolean).join(' · ');
+    const line2 = [s.detainedAt ? 'ກັກ ' + fmtDay(s.detainedAt) : '', s.detentionPlace].filter(Boolean).join(' · ');
+    return `<article class="card" data-sid="${esc(s.id)}">
+      <div class="card-head">
+        <div class="card-name"><button class="card-open" type="button">${esc(s.name || '(ບໍ່ລະບຸຊື່)')}</button></div>
+        ${st === 'repatriated'
+          ? `<span class="badge badge-active">ສົ່ງກັບແລ້ວ</span>`
+          : `<span class="badge badge-locked">ຖືກກັກຕົວ</span>`}
+      </div>
+      <div class="card-meta">
+        ${s.category ? `<span class="badge badge-files">${esc(s.category)}</span>` : ''}
+        ${(s.files||[]).length ? `<span class="badge badge-files">${ICON_CLIP}${(s.files||[]).length}</span>` : ''}
+        ${sub ? `<span class="card-sub">${esc(sub)}</span>` : ''}
+      </div>
+      ${line2 ? `<div class="card-sub" style="margin-top:2px">${esc(line2)}</div>` : ''}
+    </article>`;
+  }).join('');
+}
+
+/* คลิกการ์ด → detail (ตามระบบ) / ปุ่มล็อค → toggle (เฉพาะบริษัท) */
+$('#grid').addEventListener('click', e => {
+  const lockBtn = e.target.closest('[data-lock]');
+  if (lockBtn){ toggleLock(lockBtn.dataset.lock); return; }
+  if (e.target.closest('[data-stop]')) return; // ลิงก์โทร
+  const card = e.target.closest('.card');
+  if (!card) return;
+  if (module === 'company'){ openDetail(card.dataset.id); return; }
+  if (currentGroupId) openSuspectDetail(card.dataset.sid); // ในกลุ่ม → เปิดผู้ต้องหา
+  else openGroup(card.dataset.gid);                        // รายชื่อกลุ่ม → เข้ากลุ่ม
+});
+/* ปุ่มชื่อ (.card-open) เป็น <button> จริง — Enter/Space ยิง click เข้า delegation ข้างบนเอง */
+
+/* ============================================================
+   Filter + search + switch module
+   ============================================================ */
+function setFilter(f){
+  if (!f) return; // stat ระดับกลุ่มไม่มี key = ไม่กรอง
+  if (module === 'company') filter = f; else sFilter = f;
+  $$('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === f)));
+  render();
+}
+$$('[data-filter]').forEach(b => b.addEventListener('click', () => setFilter(b.dataset.filter)));
+$$('.mod-tab').forEach(t => t.addEventListener('click', () => setModule(t.dataset.mod)));
+$('#searchInput').addEventListener('input', e => { search = e.target.value; render(); });
+
+/* ============================================================
+   แขวง → เมือง (cascade)
+   ============================================================ */
+function fillProvinceSelect(){
+  $('#fProvince').innerHTML = '<option value="">— ເລືອກແຂວງ —</option>' +
+    PROVINCES.map((p,i) => `<option value="${i}">${esc(p)}</option>`).join('');
+}
+function fillDistrictSelect(provIdx, selected){
+  const sel = $('#fDistrict');
+  if (provIdx === '' || provIdx == null || !DISTRICTS[provIdx]){
+    sel.innerHTML = '<option value="">— ເລືອກແຂວງກ່ອນ —</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">— ເລືອກເມືອງ —</option>' +
+    DISTRICTS[provIdx].map(d => `<option value="${esc(d)}"${d === selected ? ' selected' : ''}>${esc(d)}</option>`).join('');
+}
+$('#fProvince').addEventListener('change', () => {
+  const v = $('#fProvince').value;
+  fillDistrictSelect(v === '' ? '' : Number(v), null); // เปลี่ยนแขวง → เมืองรีเซ็ต
+});
+
+/* ============================================================
+   ไฟล์แนบใน form (PDF / รูป / ไฟล์อื่น — เก็บ Blob ต้นฉบับ)
+   ============================================================ */
+function renderFormFiles(){
+  const wrap = $('#fileList');
+  wrap.innerHTML = formFiles.map((f,i) => `
+    <div class="file-row">
+      <span class="file-ext ${extClass(f)}">${esc(fileExt(f))}</span>
+      <span class="file-meta">
+        <span class="file-name">${esc(f.name)}</span>
+        <span class="file-size">${fmtBytes(f.size)}</span>
+      </span>
+      <button type="button" class="phone-del" data-rm="${i}" aria-label="ລຶບໄຟລ໌ ${esc(f.name)}">
+        <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+      </button>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-rm]').forEach(b =>
+    b.addEventListener('click', () => { formFiles.splice(Number(b.dataset.rm), 1); renderFormFiles(); }));
+}
+$('#addFilesBtn').addEventListener('click', () => $('#filesInput').click());
+$('#filesInput').addEventListener('change', e => {
+  for (const file of e.target.files){
+    if (file.size > MAX_FILE){ toast(`"${file.name}" ໃຫຍ່ເກີນ 25MB`); continue; }
+    formFiles.push({ id: uuid(), name: file.name, type: file.type || '', size: file.size, blob: file });
+  }
+  e.target.value = '';
+  renderFormFiles();
+});
+
+/* ============================================================
+   Form add/edit
+   ============================================================ */
+function phoneRow(val=''){
+  const row = document.createElement('div');
+  row.className = 'phone-row';
+  row.innerHTML = `<input class="input phone-input" type="tel" inputmode="tel" value="${esc(val)}" aria-label="ເບີໂທລະສັບ">
+    <button type="button" class="phone-del" aria-label="ລຶບເບີ"><svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg></button>`;
+  row.querySelector('.phone-del').addEventListener('click', () => {
+    if ($$('#phoneRows .phone-row').length > 1) row.remove();
+    else row.querySelector('input').value = '';
+  });
+  return row;
+}
+$('#addPhoneBtn').addEventListener('click', () => {
+  const row = phoneRow();
+  $('#phoneRows').appendChild(row);
+  row.querySelector('input').focus();
+});
+function openForm(c=null){
+  editingId = c ? c.id : null;
+  formFiles = c && Array.isArray(c.files) ? [...c.files] : [];
+  $('#formTitle').textContent = c ? 'ແກ້ໄຂຂໍ້ມູນ' : 'ເພີ່ມບໍລິສັດ';
+  $('#fName').value = c?.name || '';
+  $('#fRegNo').value = c?.regNo || '';
+  $('#fCategory').value = c?.category || '';
+  $('#fEmail').value = c?.email || '';
+  $('#fVillage').value = c?.address || '';
+  $('#fNotes').value = c?.notes || '';
+  const provIdx = (c?.province ?? '') === '' ? '' : Number(c.province);
+  $('#fProvince').value = provIdx === '' ? '' : String(provIdx);
+  fillDistrictSelect(provIdx, c?.district || null);
+  const rows = $('#phoneRows');
+  rows.innerHTML = '';
+  const phones = (c?.phones?.length ? c.phones : ['']);
+  phones.forEach(p => rows.appendChild(phoneRow(p)));
+  rows.querySelector('input')?.setAttribute('id','phoneFirst');
+  renderFormFiles();
+  refreshCatList();
+  $('#formDialog').showModal();
+  setTimeout(() => $('#fName').focus(), 50);
+}
+$('#fabAdd').addEventListener('click', () => {
+  if (module === 'company') return openForm();
+  if (currentGroupId) return openSuspectForm();   // ในกลุ่ม → เพิ่มผู้ต้องหา
+  openGroupForm();                                // รายชื่อกลุ่ม → สร้างกลุ่ม
+});
+
+$('#companyForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('#fName').value.trim();
+  if (!name){ toast('ກະລຸນາໃສ່ຊື່ບໍລິສັດ'); $('#fName').focus(); return; }
+  const now = new Date().toISOString();
+  const old = editingId ? companies.find(c => c.id === editingId) : null;
+  const provRaw = $('#fProvince').value;
+  const category = $('#fCategory').value.trim();
+  const item = {
+    id: editingId || uuid(),
+    name,
+    regNo: $('#fRegNo').value.trim(),
+    category,
+    phones: $$('#phoneRows .phone-input').map(i => i.value.trim()).filter(Boolean),
+    email: $('#fEmail').value.trim(),
+    address: $('#fVillage').value.trim(),          // บ้าน (กรอกเอง)
+    province: provRaw === '' ? '' : Number(provRaw),
+    district: $('#fDistrict').value || '',
+    notes: $('#fNotes').value.trim(),
+    files: formFiles.map(f => ({ id: f.id, name: f.name, type: f.type, size: f.size, blob: f.blob })),
+    locked: old ? old.locked : false,
+    lockReason: old ? old.lockReason : '',
+    lockedAt: old ? old.lockedAt : null,
+    lockLog: old ? (old.lockLog || []) : [],
+    createdAt: old ? old.createdAt : now,
+    updatedAt: now,
+  };
+  await dbPut(item);
+  learnCat(category); // จำประเภทใหม่อัตโนมัติ
+  const i = companies.findIndex(c => c.id === item.id);
+  if (i >= 0) companies[i] = item; else companies.push(item);
+  $('#formDialog').close();
+  toast('ບັນທຶກແລ້ວ ✓');
+  render();
+  if (detailId === item.id && $('#detailDialog').open) openDetail(item.id);
+});
+
+/* ============================================================
+   Confirm dialog (คืน Promise)
+   ============================================================ */
+function confirmDlg({ title, desc, tone, okLabel, okClass='btn-primary', withReason=false, reasonValue='' }){
+  return new Promise(resolve => {
+    $('#confirmTitle').textContent = title;
+    $('#confirmDesc').textContent = desc;
+    const icon = $('#confirmIcon');
+    icon.className = 'confirm-icon tone-' + tone;
+    icon.innerHTML = tone === 'danger'
+      ? '<svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1A2 2 0 0 1 15.1 22H8.9a2 2 0 0 1-2-1.9Z"/></svg>'
+      : (tone === 'lock' ? ICON_LOCK : ICON_UNLOCK);
+    $('#confirmReasonWrap').hidden = !withReason;
+    $('#confirmReason').value = reasonValue;
+    const ok = $('#confirmOkBtn');
+    ok.textContent = okLabel || 'ຕົກລົງ';
+    ok.className = 'btn ' + okClass;
+    const dlg = $('#confirmDialog');
+    // จุด resolve เดียว (finish) — ครอบทุกทางปิด: OK / ยกเลิก / Esc / แตะ backdrop
+    // ห้าม resolve จาก listener ที่ถอดไม่ครบ: promise ค้าง + OK ครั้งถัดไป
+    // จะยิง action เก่าใส่บริษัทผิดตัว (บั๊กที่ reviewer ทำ repro ได้จริง)
+    // มี interval เฝ้า dlg.open สำรอง — บาง embedded browser ไม่ยิง event 'close'
+    let settled = false;
+    const finish = val => {
+      if (settled) return;
+      settled = true;
+      clearInterval(watch);
+      ok.removeEventListener('click', onOk);
+      dlg.removeEventListener('close', onClose);
+      if (dlg.open) dlg.close();
+      resolve(val);
+    };
+    const onOk = () => finish({ ok:true, reason: $('#confirmReason').value.trim() });
+    const onClose = () => finish({ ok:false });
+    ok.addEventListener('click', onOk);
+    dlg.addEventListener('close', onClose);
+    const watch = setInterval(() => { if (!dlg.open) finish({ ok:false }); }, 150);
+    dlg.showModal();
+    if (withReason) setTimeout(() => $('#confirmReason').focus(), 50);
+  });
+}
+
+/* ============================================================
+   Lock / Unlock
+   ============================================================ */
+async function toggleLock(id){
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  if (!c.locked){
+    const r = await confirmDlg({
+      title: 'ລັອກບໍລິສັດນີ້?', desc: 'ເມື່ອລັອກແລ້ວ ຈະແກ້ໄຂ ຫຼື ລຶບຂໍ້ມູນບໍ່ໄດ້ ຈົນກວ່າຈະປົດລັອກ',
+      tone: 'lock', okLabel: 'ລັອກ', okClass: 'btn-gold', withReason: true,
+    });
+    if (!r.ok) return;
+    c.locked = true; c.lockReason = r.reason; c.lockedAt = new Date().toISOString();
+    if (!Array.isArray(c.lockLog)) c.lockLog = [];
+    c.lockLog.push({ action:'lock', at: c.lockedAt, reason: r.reason });
+    toast('ລັອກແລ້ວ 🔒');
+  } else {
+    const r = await confirmDlg({
+      title: 'ປົດລັອກບໍລິສັດນີ້?', desc: 'ຂໍ້ມູນຈະກັບມາແກ້ໄຂໄດ້ຕາມປົກກະຕິ',
+      tone: 'unlock', okLabel: 'ປົດລັອກ',
+    });
+    if (!r.ok) return;
+    c.locked = false; c.lockReason = ''; c.lockedAt = null;
+    if (!Array.isArray(c.lockLog)) c.lockLog = [];
+    c.lockLog.push({ action:'unlock', at: new Date().toISOString(), reason:'' });
+    toast('ປົດລັອກແລ້ວ 🔓');
+  }
+  c.updatedAt = new Date().toISOString();
+  await dbPut(c);
+  render();
+  if (detailId === id && $('#detailDialog').open) openDetail(id);
+  // render() ทำลายปุ่มที่ focus อยู่ — คืน focus ให้ปุ่มล็อคตัวเดิม (เฉพาะตอนกดจากการ์ด)
+  else $(`[data-lock="${CSS.escape(id)}"]`)?.focus();
+}
+
+/* ============================================================
+   Detail
+   ============================================================ */
+const ICON_PIN = '<svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 4.5A2.5 2.5 0 1 0 12 11.5 2.5 2.5 0 0 0 12 6.5Z"/></svg>';
+const ICON_DOC = '<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V8h4.5ZM8 12h8v2H8Zm0 4h8v2H8Z"/></svg>';
+const ICON_MAIL = '<svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm8 7L4.5 6h15Z"/></svg>';
+const ICON_NOTE = '<svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v10l-6 6H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm9 16.5V15h4.5Z"/></svg>';
+const ICON_CLOCK = '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 5h-2v6l5.2 3.1 1-1.7-4.2-2.5Z"/></svg>';
+const ICON_OPEN = '<svg class="open-ico" viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.4l-9.3 9.3-1.4-1.4L17.6 5H14ZM5 5h6v2H7v10h10v-4h2v6H5Z"/></svg>';
+
+function dropDetailFileURLs(){
+  detailFileURLs.forEach(u => URL.revokeObjectURL(u));
+  detailFileURLs = [];
+}
+function infoRow(icon, key, valHTML){
+  return valHTML ? `<div class="info-row">${icon}<span class="k">${esc(key)}</span><span class="v">${valHTML}</span></div>` : '';
+}
+function openDetail(id){
+  const c = companies.find(x => x.id === id);
+  if (!c) return;
+  const wasOpen = $('#detailDialog').open; // re-render ขณะเปิด → ต้องคืน focus เอง
+  detailId = id;
+  dropDetailFileURLs();
+  const addrParts = [c.address, c.district ? 'ເມືອງ ' + c.district : '', provinceName(c) ? 'ແຂວງ ' + provinceName(c) : ''].filter(Boolean);
+  const mapsQ = encodeURIComponent(addrParts.join(' '));
+  const phonesHTML = (c.phones||[]).map(p =>
+    `<a href="tel:${esc(p.replace(/[^\d+]/g,''))}">${esc(p)}</a>`).join(' · ');
+  const filesHTML = (c.files||[]).map(f => {
+    const u = URL.createObjectURL(f.blob);
+    detailFileURLs.push(u);
+    const viewable = f.type === 'application/pdf' || (f.type||'').startsWith('image/');
+    return `<a class="file-row" href="${u}" target="_blank" rel="noopener" ${viewable ? '' : `download="${esc(f.name)}"`}>
+      <span class="file-ext ${extClass(f)}">${esc(fileExt(f))}</span>
+      <span class="file-meta">
+        <span class="file-name">${esc(f.name)}</span>
+        <span class="file-size">${fmtBytes(f.size)}</span>
+      </span>
+      ${ICON_OPEN}
+    </a>`;
+  }).join('');
+  // ประวัติล็อค/ปลดล็อค (ใหม่สุดก่อน)
+  const logHTML = (c.lockLog||[]).slice().reverse().map(ev => `
+    <div class="log-item">
+      <span class="badge ${ev.action==='lock'?'badge-locked':'badge-active'}">${ev.action==='lock'?ICON_LOCK:ICON_UNLOCK}${ev.action==='lock'?'ລັອກ':'ປົດລັອກ'}</span><span class="log-when">${esc(fmtDate(ev.at))}</span>
+      ${ev.reason ? `<div class="log-reason">ເຫດຜົນ: ${esc(ev.reason)}</div>` : ''}
+    </div>`).join('');
+  $('#detailBody').innerHTML = `
+    <div style="padding-top:var(--space-3)">
+      <div class="detail-name">${esc(c.name)}</div>
+      <div class="detail-badges">
+        ${c.locked
+          ? `<span class="badge badge-locked">${ICON_LOCK}ຖືກລັອກ</span>`
+          : `<span class="badge badge-active">ປົກກະຕິ</span>`}
+        ${c.category ? `<span class="badge" style="background:var(--bg-sunken);color:var(--text-secondary)">${esc(c.category)}</span>` : ''}
+      </div>
+
+      <div class="lock-panel ${c.locked?'is-locked':''}">
+        <div class="lock-info">
+          <div class="lock-state">${c.locked ? 'ສະຖານະ: ຖືກລັອກ' : 'ສະຖານະ: ປົກກະຕິ'}</div>
+          <div class="lock-meta">${c.locked
+            ? 'ລັອກເມື່ອ: ' + esc(fmtDate(c.lockedAt)) + (c.lockReason ? '<br>ເຫດຜົນ: ' + esc(c.lockReason) : '')
+            : 'ເມື່ອລັອກແລ້ວ ຈະແກ້ໄຂ ຫຼື ລຶບຂໍ້ມູນບໍ່ໄດ້ ຈົນກວ່າຈະປົດລັອກ'}</div>
+        </div>
+        <button class="switch" role="switch" aria-checked="${c.locked ? 'true' : 'false'}" id="detailLockSwitch"
+          aria-label="${c.locked ? 'ປົດລັອກ' : 'ລັອກ'}"></button>
+      </div>
+
+      ${infoRow(ICON_PHONE, 'ເບີໂທລະສັບ', phonesHTML)}
+      ${infoRow(ICON_DOC, 'ເລກທະບຽນ', c.regNo ? esc(c.regNo) : '')}
+      ${infoRow(ICON_MAIL, 'ອີເມວ', c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : '')}
+      ${infoRow(ICON_PIN, 'ທີ່ຢູ່', addrParts.map(esc).join('<br>'))}
+      ${infoRow(ICON_NOTE, 'ໝາຍເຫດ', c.notes ? esc(c.notes) : '')}
+      ${infoRow(ICON_CLIP, 'ເອກະສານແນບ', filesHTML ? `<div class="file-list">${filesHTML}</div>` : '')}
+      ${infoRow(ICON_CLOCK, 'ປະຫວັດລັອກ', logHTML)}
+      ${infoRow(ICON_CLOCK, 'ແກ້ໄຂລ່າສຸດ', esc(fmtDate(c.updatedAt)))}
+
+      <div class="detail-actions">
+        ${(c.phones||[]).length ? `<a class="action-tile" href="tel:${esc(c.phones[0].replace(/[^\d+]/g,''))}">${ICON_PHONE}<span>ໂທ</span></a>` : ''}
+        ${(c.phones||[]).length ? `<a class="action-tile" target="_blank" rel="noopener" href="https://wa.me/${waNumber(c.phones[0])}">${ICON_WA}<span>WhatsApp</span></a>` : ''}
+        ${mapsQ ? `<a class="action-tile" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${mapsQ}">${ICON_PIN}<span>ແຜນທີ່</span></a>` : ''}
+        <button class="action-tile" id="detailEditBtn" ${c.locked?'aria-disabled="true"':''}>
+          <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75ZM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75Z"/></svg>
+          <span>ແກ້ໄຂ</span></button>
+        <button class="action-tile danger" id="detailDeleteBtn" ${c.locked?'aria-disabled="true"':''}>
+          <svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1A2 2 0 0 1 15.1 22H8.9a2 2 0 0 1-2-1.9Z"/></svg>
+          <span>ລຶບ</span></button>
+      </div>
+      ${c.locked ? `<p style="font-size:.8rem;color:var(--text-tertiary);text-align:center;margin-top:var(--space-2)">ຕ້ອງປົດລັອກກ່ອນ ຈຶ່ງແກ້ໄຂ ຫຼື ລຶບໄດ້</p>` : ''}
+    </div>`;
+  $('#detailLockSwitch').addEventListener('click', () => toggleLock(id));
+  $('#detailEditBtn').addEventListener('click', () => {
+    if (c.locked){ toast('ຕ້ອງປົດລັອກກ່ອນ ຈຶ່ງແກ້ໄຂ ຫຼື ລຶບໄດ້'); return; }
+    $('#detailDialog').close();
+    openForm(c);
+  });
+  $('#detailDeleteBtn').addEventListener('click', async () => {
+    if (c.locked){ toast('ຕ້ອງປົດລັອກກ່ອນ ຈຶ່ງແກ້ໄຂ ຫຼື ລຶບໄດ້'); return; }
+    const r = await confirmDlg({
+      title: 'ລຶບບໍລິສັດນີ້?', desc: 'ຂໍ້ມູນ ແລະ ໄຟລ໌ແນບທັງໝົດຈະຖືກລຶບຖາວອນ ກູ້ຄືນບໍ່ໄດ້',
+      tone: 'danger', okLabel: 'ລຶບ', okClass: 'btn-danger',
+    });
+    if (!r.ok) return;
+    await dbDelete(c.id);
+    companies = companies.filter(x => x.id !== c.id);
+    $('#detailDialog').close();
+    toast('ລຶບແລ້ວ');
+    render();
+  });
+  if (!wasOpen) $('#detailDialog').showModal();
+  else $('#detailLockSwitch').focus(); // innerHTML ทับ element เดิม focus ตกไป body
+}
+
+/* ปุ่มปิด dialog ทั่วไป + คลิก backdrop เพื่อปิด
+   - formDialog/catDialog ไม่ปิดด้วย backdrop (กันแตะพลาดแล้วข้อมูลที่พิมพ์หาย)
+   - ที่เหลือปิดได้ แต่ต้องเริ่มกด (pointerdown) บน backdrop ด้วย
+     กันเคสลากเลือกข้อความจากใน input แล้วปล่อยนิ้วนอก dialog */
+$$('dialog').forEach(dlg => {
+  dlg.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => dlg.close()));
+  if (dlg.id === 'formDialog' || dlg.id === 'catDialog' || dlg.id === 'suspectFormDialog' || dlg.id === 'groupFormDialog') return;
+  let downOnBackdrop = false;
+  dlg.addEventListener('pointerdown', e => { downOnBackdrop = (e.target === dlg); });
+  dlg.addEventListener('click', e => { if (e.target === dlg && downOnBackdrop) dlg.close(); });
+});
+$('#detailDialog').addEventListener('close', () => { detailId = null; dropDetailFileURLs(); });
+
+/* ============================================================
+   กลุ่มผู้ต้องหา (groups) — form / edit / delete + breadcrumb
+   ============================================================ */
+function todayYMD(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function openGroupForm(g=null){
+  groupEditingId = g ? g.id : null;
+  $('#gFormTitle').textContent = g ? 'ແກ້ໄຂກຸ່ມ' : 'ສ້າງກຸ່ມ';
+  $('#gName').value = g?.name || '';
+  $('#gCount').value = (g && g.plannedCount != null && g.plannedCount !== '') ? g.plannedCount : '';
+  $('#gCreatedDate').value = g?.createdDate || (g ? '' : todayYMD()); // สร้างใหม่ = วันนี้
+  $('#groupFormDialog').showModal();
+  setTimeout(() => $('#gName').focus(), 50);
+}
+$('#groupForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('#gName').value.trim();
+  if (!name){ toast('ກະລຸນາໃສ່ຊື່ກຸ່ມ'); $('#gName').focus(); return; }
+  const now = new Date().toISOString();
+  const old = groupEditingId ? groupById(groupEditingId) : null;
+  const cnt = $('#gCount').value.trim();
+  const item = {
+    id: groupEditingId || uuid(),
+    name,
+    plannedCount: cnt === '' ? '' : Math.max(0, parseInt(cnt, 10) || 0),
+    createdDate: $('#gCreatedDate').value || '',
+    createdAt: old ? old.createdAt : now,
+    updatedAt: now,
+  };
+  await dbPut(item, 'groups');
+  const i = groups.findIndex(g => g.id === item.id);
+  if (i >= 0) groups[i] = item; else groups.push(item);
+  $('#groupFormDialog').close();
+  toast(old ? 'ບັນທຶກແລ້ວ ✓' : 'ສ້າງກຸ່ມແລ້ວ ✓');
+  if (currentGroupId === item.id) syncModuleUI(); // ชื่อ breadcrumb อัปเดต
+  render();
+});
+/* breadcrumb: กลับ / แก้ไขกลุ่ม / ลบกลุ่ม */
+$('#crumbBack').addEventListener('click', backToGroups);
+$('#crumbEdit').addEventListener('click', () => { const g = groupById(currentGroupId); if (g) openGroupForm(g); });
+$('#crumbDelete').addEventListener('click', async () => {
+  const g = groupById(currentGroupId); if (!g) return;
+  const mem = groupSuspects(g.id);
+  const r = await confirmDlg({
+    title: 'ລຶບກຸ່ມນີ້?',
+    desc: mem.length ? `ຈະລຶບກຸ່ມ ພ້ອມຜູ້ຕ້ອງຫາ ${mem.length} ຄົນ ຖາວອນ ກູ້ຄືນບໍ່ໄດ້` : 'ຈະລຶບກຸ່ມນີ້ຖາວອນ',
+    tone: 'danger', okLabel: 'ລຶບ', okClass: 'btn-danger',
+  });
+  if (!r.ok) return;
+  for (const s of mem){ await dbDelete(s.id, 'suspects'); }
+  suspects = suspects.filter(s => s.groupId !== g.id);
+  await dbDelete(g.id, 'groups');
+  groups = groups.filter(x => x.id !== g.id);
+  toast('ລຶບກຸ່ມແລ້ວ');
+  backToGroups();
+});
+
+/* ============================================================
+   ระบบผู้ต้องหา (suspects) — form / detail / delete
+   ============================================================ */
+const ICON_PERSON = '<svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z"/></svg>';
+const ICON_FLAG = '<svg viewBox="0 0 24 24"><path d="M6 2v20H4V2Zm2 1h11l-2 4 2 4H8Z"/></svg>';
+const ICON_CAL = '<svg viewBox="0 0 24 24"><path d="M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2Zm12 7v10H5V9Z"/></svg>';
+const ICON_GAVEL = '<svg viewBox="0 0 24 24"><path d="M14 3l7 7-2.5 2.5-7-7Zm-3.5 3.5 7 7L15 15l-7-7ZM3 19h11v2H3Zm3.3-6.2 4.9 4.9-1.4 1.4-4.9-4.9Z"/></svg>';
+const ICON_UNIT = '<svg viewBox="0 0 24 24"><path d="M3 21V7l7-4 7 4v3h4v11h-6v-5h-3v5Zm7-11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/></svg>';
+const ICON_EXIT = '<svg viewBox="0 0 24 24"><path d="M10 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-8v-2h8V5h-8Zm-.5 5 4 4-4 4-1.4-1.4L11.2 13H3v-2h8.2L8.1 9.4Z"/></svg>';
+
+const sVal = id => $(id).value.trim();
+/* checkbox "ຂ້າມກ່อน" ↔ ช่องวันที่: ติ๊ก = ปิดช่อง+ล้างค่า (ยังไม่ดำเนินการ) */
+function wireSkip(cbId, dateId){
+  const cb = $(cbId), d = $(dateId);
+  cb.addEventListener('change', () => { d.disabled = cb.checked; if (cb.checked) d.value = ''; });
+}
+wireSkip('#sCaseClosedSkip', '#sCaseClosedAt');
+wireSkip('#sRepatriatedSkip', '#sRepatriatedAt');
+function applySkip(cbId, dateId, dateVal){
+  // มีวันที่ = ไม่ข้าม (เปิดช่อง); ไม่มีวันที่ = ข้ามไว้ก่อน (ปิดช่อง)
+  const cb = $(cbId), d = $(dateId);
+  d.value = dateVal || '';
+  cb.checked = !dateVal;
+  d.disabled = cb.checked;
+}
+/* ── ไฟล์แนบในฟอร์มผู้ต้องหา (แยก array จากฝั่งบริษัท) ── */
+let sFormFiles = [];
+let sDetailFileURLs = [];
+function renderSFormFiles(){
+  const wrap = $('#sFileList');
+  wrap.innerHTML = sFormFiles.map((f,i) => `
+    <div class="file-row">
+      <span class="file-ext ${extClass(f)}">${esc(fileExt(f))}</span>
+      <span class="file-meta">
+        <span class="file-name">${esc(f.name)}</span>
+        <span class="file-size">${fmtBytes(f.size)}</span>
+      </span>
+      <button type="button" class="phone-del" data-rm="${i}" aria-label="ລຶບໄຟລ໌ ${esc(f.name)}">
+        <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+      </button>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-rm]').forEach(b =>
+    b.addEventListener('click', () => { sFormFiles.splice(Number(b.dataset.rm), 1); renderSFormFiles(); }));
+}
+$('#sAddFilesBtn').addEventListener('click', () => $('#sFilesInput').click());
+$('#sFilesInput').addEventListener('change', e => {
+  for (const file of e.target.files){
+    if (file.size > MAX_FILE){ toast(`"${file.name}" ໃຫຍ່ເກີນ 25MB`); continue; }
+    sFormFiles.push({ id: uuid(), name: file.name, type: file.type || '', size: file.size, blob: file });
+  }
+  e.target.value = '';
+  renderSFormFiles();
+});
+function openSuspectForm(s=null){
+  sEditingId = s ? s.id : null;
+  sFormFiles = s && Array.isArray(s.files) ? [...s.files] : [];
+  $('#sFormTitle').textContent = s ? 'ແກ້ໄຂຂໍ້ມູນຜູ້ຕ້ອງຫາ' : 'ເພີ່ມຜູ້ຕ້ອງຫາ';
+  $('#sName').value = s?.name || '';
+  $('#sCategory').value = s?.category || '';
+  $('#sDob').value = s?.dob || '';
+  $('#sNationality').value = s?.nationality || '';
+  $('#sBorderPass').value = s?.borderPassNo || '';
+  $('#sDetainedAt').value = s?.detainedAt || '';
+  $('#sDetentionPlace').value = s?.detentionPlace || '';
+  $('#sCharge').value = s?.charge || '';
+  $('#sHandlingUnit').value = s?.handlingUnit || '';
+  applySkip('#sCaseClosedSkip', '#sCaseClosedAt', s?.caseClosedAt);
+  applySkip('#sRepatriatedSkip', '#sRepatriatedAt', s?.repatriatedAt);
+  $('#sExitCheckpoint').value = s?.exitCheckpoint || '';
+  renderSFormFiles();
+  $('#suspectFormDialog').showModal();
+  setTimeout(() => $('#sName').focus(), 50);
+}
+$('#suspectForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = sVal('#sName'); // ทั้ง 3 ช่องกรอกหรือไม่ก็ได้ (ไม่บังคับ)
+  const now = new Date().toISOString();
+  const old = sEditingId ? suspects.find(s => s.id === sEditingId) : null;
+  const category = sVal('#sCategory');
+  const item = {
+    id: sEditingId || uuid(),
+    name,
+    category,
+    dob: $('#sDob').value || '',
+    nationality: sVal('#sNationality'),
+    borderPassNo: sVal('#sBorderPass'),
+    detainedAt: $('#sDetainedAt').value || '',
+    detentionPlace: sVal('#sDetentionPlace'),
+    charge: sVal('#sCharge'),
+    handlingUnit: sVal('#sHandlingUnit'),
+    caseClosedAt: $('#sCaseClosedAt').value || '',
+    repatriatedAt: $('#sRepatriatedAt').value || '',
+    exitCheckpoint: sVal('#sExitCheckpoint'),
+    files: sFormFiles.map(f => ({ id: f.id, name: f.name, type: f.type, size: f.size, blob: f.blob })),
+    groupId: old ? old.groupId : currentGroupId, // ผูกกับกลุ่มที่เปิดอยู่ (แก้ไข = คงกลุ่มเดิม)
+    createdAt: old ? old.createdAt : now,
+    updatedAt: now,
+  };
+  await dbPut(item, 'suspects');
+  learnSCat(category); // จำหมวดใหม่อัตโนมัติ
+  const i = suspects.findIndex(s => s.id === item.id);
+  if (i >= 0) suspects[i] = item; else suspects.push(item);
+  $('#suspectFormDialog').close();
+  toast('ບັນທຶກແລ້ວ ✓');
+  render();
+  if (sDetailId === item.id && $('#suspectDetailDialog').open) openSuspectDetail(item.id);
+});
+
+let sDetailId = null;
+function sInfoRow(icon, key, val){
+  return val ? `<div class="info-row">${icon}<span class="k">${esc(key)}</span><span class="v">${esc(val)}</span></div>` : '';
+}
+function dropSDetailFileURLs(){ sDetailFileURLs.forEach(u => URL.revokeObjectURL(u)); sDetailFileURLs = []; }
+function openSuspectDetail(id){
+  const s = suspects.find(x => x.id === id);
+  if (!s) return;
+  const wasOpen = $('#suspectDetailDialog').open;
+  sDetailId = id;
+  dropSDetailFileURLs();
+  const st = suspectStatus(s);
+  const filesHTML = (s.files||[]).map(f => {
+    const u = URL.createObjectURL(f.blob);
+    sDetailFileURLs.push(u);
+    const viewable = f.type === 'application/pdf' || (f.type||'').startsWith('image/');
+    return `<a class="file-row" href="${u}" target="_blank" rel="noopener" ${viewable ? '' : `download="${esc(f.name)}"`}>
+      <span class="file-ext ${extClass(f)}">${esc(fileExt(f))}</span>
+      <span class="file-meta">
+        <span class="file-name">${esc(f.name)}</span>
+        <span class="file-size">${fmtBytes(f.size)}</span>
+      </span>
+      ${ICON_OPEN}
+    </a>`;
+  }).join('');
+  $('#sDetailBody').innerHTML = `
+    <div style="padding-top:var(--space-3)">
+      <div class="detail-name">${esc(s.name || '(ບໍ່ລະບຸຊື່)')}</div>
+      <div class="detail-badges">
+        ${st === 'repatriated'
+          ? `<span class="badge badge-active">ສົ່ງກັບຄືນປະເທດແລ້ວ</span>`
+          : `<span class="badge badge-locked">ຖືກກັກຕົວ</span>`}
+        ${s.category ? `<span class="badge" style="background:var(--interactive-soft);color:var(--interactive-text)">${esc(s.category)}</span>` : ''}
+        ${s.nationality ? `<span class="badge" style="background:var(--bg-sunken);color:var(--text-secondary)">${ICON_FLAG}${esc(s.nationality)}</span>` : ''}
+      </div>
+      ${sInfoRow(ICON_CAL, 'ວ/ດ/ປ ເກີດ', fmtDay(s.dob) === '—' ? '' : fmtDay(s.dob))}
+      ${sInfoRow(ICON_DOC, 'ໜັງສືຜ່ານແດນ', s.borderPassNo)}
+      ${sInfoRow(ICON_CAL, 'ວັນທີ່ຖືກກັກຕົວ', fmtDay(s.detainedAt) === '—' ? '' : fmtDay(s.detainedAt))}
+      ${sInfoRow(ICON_PIN, 'ສະຖານທີ່ກັກຕົວ', s.detentionPlace)}
+      ${sInfoRow(ICON_GAVEL, 'ຂໍ້ກ່າວຫາ', s.charge)}
+      ${sInfoRow(ICON_UNIT, 'ພາກສ່ວນດຳເນີນ', s.handlingUnit)}
+      ${sInfoRow(ICON_CAL, 'ດຳເນີນຄະດີສຳເລັດ', fmtDay(s.caseClosedAt) === '—' ? '' : fmtDay(s.caseClosedAt))}
+      ${sInfoRow(ICON_CAL, 'ນຳສົ່ງກັບປະເທດ', fmtDay(s.repatriatedAt) === '—' ? '' : fmtDay(s.repatriatedAt))}
+      ${sInfoRow(ICON_EXIT, 'ດ່ານທີ່ສົ່ງອອກ', s.exitCheckpoint)}
+      ${filesHTML ? `<div class="info-row">${ICON_CLIP}<span class="k">ເອກະສານແນບ</span><span class="v"><div class="file-list">${filesHTML}</div></span></div>` : ''}
+      ${sInfoRow(ICON_CLOCK, 'ແກ້ໄຂລ່າສຸດ', fmtDate(s.updatedAt))}
+      <div class="detail-actions">
+        <button class="action-tile" id="sDetailEditBtn">
+          <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75ZM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75Z"/></svg>
+          <span>ແກ້ໄຂ</span></button>
+        <button class="action-tile danger" id="sDetailDeleteBtn">
+          <svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1A2 2 0 0 1 15.1 22H8.9a2 2 0 0 1-2-1.9Z"/></svg>
+          <span>ລຶບ</span></button>
+      </div>
+    </div>`;
+  $('#sDetailEditBtn').addEventListener('click', () => { $('#suspectDetailDialog').close(); openSuspectForm(s); });
+  $('#sDetailDeleteBtn').addEventListener('click', async () => {
+    const r = await confirmDlg({
+      title: 'ລຶບຜູ້ຕ້ອງຫານີ້?', desc: 'ຂໍ້ມູນຈະຖືກລຶບຖາວອນ ກູ້ຄືນບໍ່ໄດ້',
+      tone: 'danger', okLabel: 'ລຶບ', okClass: 'btn-danger',
+    });
+    if (!r.ok) return;
+    await dbDelete(s.id, 'suspects');
+    suspects = suspects.filter(x => x.id !== s.id);
+    $('#suspectDetailDialog').close();
+    toast('ລຶບແລ້ວ');
+    render();
+  });
+  if (!wasOpen) $('#suspectDetailDialog').showModal();
+}
+$('#suspectDetailDialog').addEventListener('close', () => { sDetailId = null; dropSDetailFileURLs(); });
+
+/* ============================================================
+   Export / Import (v2: มี categories + files)
+   ============================================================ */
+const blobToDataURL = blob => new Promise((res, rej) => {
+  const fr = new FileReader();
+  fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error);
+  fr.readAsDataURL(blob);
+});
+async function dataURLToBlob(u){ return (await fetch(u)).blob(); }
+
+async function serializeFiles(files){ // Blob → dataURL (JSON เก็บ Blob ตรงๆ ไม่ได้)
+  const out = [];
+  for (const f of (files || [])) out.push({ id: f.id, name: f.name, type: f.type, size: f.size, data: await blobToDataURL(f.blob) });
+  return out;
+}
+async function doExport(){
+  const out = [];
+  for (const c of companies){
+    const { photo, files, ...rest } = c; // photo = ฟีเจอร์เก่าที่ถอดแล้ว — ไม่ export
+    out.push({ ...rest, files: await serializeFiles(files) });
+  }
+  const suspectsOut = [];
+  for (const s of suspects){
+    const { files, ...rest } = s;
+    suspectsOut.push({ ...rest, files: await serializeFiles(files) });
+  }
+  const blob = new Blob([JSON.stringify({ app:'borisat', version:3, exportedAt:new Date().toISOString(), categories: loadCats(), suspectCategories: loadSCats(), companies:out, groups: groups.map(g => ({ ...g })), suspects: suspectsOut }, null, 1)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'borisat-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('ສຳຮອງຂໍ້ມູນແລ້ວ');
+}
+$('#importInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const arr = Array.isArray(data) ? data : data.companies;
+    if (!Array.isArray(arr)) throw new Error('bad format');
+    if (Array.isArray(data.categories)){
+      const merged = [...new Set([...loadCats(), ...data.categories.filter(x => typeof x === 'string' && x.trim())])];
+      saveCats(merged);
+    }
+    if (Array.isArray(data.suspectCategories)){
+      const merged = [...new Set([...loadSCats(), ...data.suspectCategories.filter(x => typeof x === 'string' && x.trim())])];
+      saveSCats(merged);
+    }
+    // sanitize ทุก field — JSON จากภายนอกห้ามเชื่อชนิดข้อมูล:
+    // string แปลกชนิดทำ render() crash ถาวร, id แปลกฉีด HTML ได้ (XSS)
+    const str = (v, max=2000) => typeof v === 'string' ? v.slice(0, max) : '';
+    const iso = v => typeof v === 'string' ? v : null;
+    let n = 0, skipped = 0;
+    for (const raw of arr){
+      try {
+        if (!raw || typeof raw.name !== 'string' || !raw.name.trim()){ skipped++; continue; }
+        const provNum = Number(raw.province);
+        const filesIn = [];
+        for (const f of (Array.isArray(raw.files) ? raw.files : [])){
+          if (!f || typeof f.data !== 'string') continue;
+          filesIn.push({ id: uuid(), name: str(f.name, 255) || 'file', type: str(f.type, 100),
+            size: Number(f.size) || 0, blob: await dataURLToBlob(f.data) });
+        }
+        const now = new Date().toISOString();
+        const item = {
+          id: (typeof raw.id === 'string' && /^[\w-]{1,64}$/.test(raw.id)) ? raw.id : uuid(),
+          name: str(raw.name, 300).trim(),
+          regNo: str(raw.regNo, 100),
+          category: str(raw.category, 100),
+          phones: Array.isArray(raw.phones) ? raw.phones.filter(p => typeof p === 'string').map(p => p.slice(0, 40)) : [],
+          email: str(raw.email, 200),
+          address: str(raw.address, 500),
+          province: (Number.isInteger(provNum) && PROVINCES[provNum]) ? provNum : '',
+          district: str(raw.district, 100),
+          notes: str(raw.notes),
+          files: filesIn,
+          locked: !!raw.locked,
+          lockReason: str(raw.lockReason, 500),
+          lockedAt: iso(raw.lockedAt),
+          lockLog: Array.isArray(raw.lockLog)
+            ? raw.lockLog
+                .filter(ev => ev && (ev.action === 'lock' || ev.action === 'unlock') && typeof ev.at === 'string')
+                .map(ev => ({ action: ev.action, at: ev.at, reason: str(ev.reason, 500) }))
+            : [],
+          createdAt: iso(raw.createdAt) || now,
+          updatedAt: iso(raw.updatedAt) || now,
+        };
+        await dbPut(item);
+        const i = companies.findIndex(c => c.id === item.id);
+        if (i >= 0) companies[i] = item; else companies.push(item);
+        n++;
+      } catch { skipped++; } // record เสียตัวเดียวห้ามล้ม import ทั้งไฟล์
+    }
+    // ── นำเข้าผู้ต้องหา (ถ้ามีในไฟล์) ──
+    const day = v => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) ? v : '';
+    // ── นำเข้ากลุ่ม (ก่อนผู้ต้องหา เพื่อให้ groupId ชี้ถูก) ──
+    let gn = 0, gskip = 0;
+    for (const raw of (Array.isArray(data.groups) ? data.groups : [])){
+      try {
+        if (!raw || typeof raw.name !== 'string' || !raw.name.trim()){ gskip++; continue; }
+        const now = new Date().toISOString();
+        const item = {
+          id: (typeof raw.id === 'string' && /^[\w-]{1,64}$/.test(raw.id)) ? raw.id : uuid(),
+          name: str(raw.name, 300).trim(),
+          plannedCount: (raw.plannedCount === '' || raw.plannedCount == null) ? '' : Math.max(0, parseInt(raw.plannedCount, 10) || 0),
+          createdDate: day(raw.createdDate),
+          createdAt: iso(raw.createdAt) || now,
+          updatedAt: iso(raw.updatedAt) || now,
+        };
+        await dbPut(item, 'groups');
+        const i = groups.findIndex(g => g.id === item.id);
+        if (i >= 0) groups[i] = item; else groups.push(item);
+        gn++;
+      } catch { gskip++; }
+    }
+    let sn = 0, sskip = 0;
+    for (const raw of (Array.isArray(data.suspects) ? data.suspects : [])){
+      try {
+        if (!raw || typeof raw !== 'object'){ sskip++; continue; } // ชื่อไม่บังคับแล้ว
+        const now = new Date().toISOString();
+        const filesIn = [];
+        for (const f of (Array.isArray(raw.files) ? raw.files : [])){
+          if (!f || typeof f.data !== 'string') continue;
+          filesIn.push({ id: uuid(), name: str(f.name, 255) || 'file', type: str(f.type, 100),
+            size: Number(f.size) || 0, blob: await dataURLToBlob(f.data) });
+        }
+        const item = {
+          id: (typeof raw.id === 'string' && /^[\w-]{1,64}$/.test(raw.id)) ? raw.id : uuid(),
+          name: str(raw.name, 300).trim(),
+          category: str(raw.category, 100),
+          dob: day(raw.dob),
+          nationality: str(raw.nationality, 100),
+          borderPassNo: str(raw.borderPassNo, 100),
+          detainedAt: day(raw.detainedAt),
+          detentionPlace: str(raw.detentionPlace, 300),
+          charge: str(raw.charge, 1000),
+          handlingUnit: str(raw.handlingUnit, 300),
+          caseClosedAt: day(raw.caseClosedAt),
+          repatriatedAt: day(raw.repatriatedAt),
+          exitCheckpoint: str(raw.exitCheckpoint, 300),
+          files: filesIn,
+          groupId: (typeof raw.groupId === 'string' && /^[\w-]{1,64}$/.test(raw.groupId)) ? raw.groupId : null,
+          createdAt: iso(raw.createdAt) || now,
+          updatedAt: iso(raw.updatedAt) || now,
+        };
+        await dbPut(item, 'suspects');
+        const i = suspects.findIndex(s => s.id === item.id);
+        if (i >= 0) suspects[i] = item; else suspects.push(item);
+        sn++;
+      } catch { sskip++; }
+    }
+    // เก็บหมวดที่ผู้ต้องหาที่นำเข้าใช้ ให้โผล่ในตัวจัดการ/ตัวกรอง (เผื่อไฟล์ไม่มี suspectCategories)
+    const usedCats = [...new Set(suspects.map(s => s.category).filter(Boolean))];
+    const mergedS = [...new Set([...loadSCats(), ...usedCats])];
+    if (mergedS.length !== loadSCats().length) saveSCats(mergedS);
+    await ensureGrouped(); // ผู้ต้องหาที่ groupId ไม่ตรงกลุ่มใด → ใส่กลุ่มเริ่มต้น
+    const parts = [];
+    if (n || (!sn && !gn)) parts.push(`ບໍລິສັດ ${n}`);
+    if (gn) parts.push(`ກຸ່ມ ${gn}`);
+    if (sn) parts.push(`ຜູ້ຕ້ອງຫາ ${sn}`);
+    toast(`ນຳເຂົ້າແລ້ວ ${parts.join(', ')}` + ((skipped+sskip+gskip) ? ` (ຂ້າມ ${skipped+sskip+gskip})` : ''));
+    render();
+  } catch { toast('ໄຟລ໌ບໍ່ຖືກຕ້ອງ'); }
+});
+
+/* ============================================================
+   รายงานล็อค/ปลดล็อครวมทุกบริษัท (เรียงใหม่สุดก่อน)
+   ============================================================ */
+function openReport(){
+  const events = [];
+  for (const c of companies)
+    for (const ev of (c.lockLog || []))
+      events.push({ ...ev, name: c.name, id: c.id });
+  events.sort((a,b) => (b.at||'').localeCompare(a.at||''));
+  $('#reportBody').innerHTML = events.length
+    ? events.map(ev => `
+      <button type="button" class="report-row" data-id="${esc(ev.id)}">
+        <span class="badge ${ev.action==='lock'?'badge-locked':'badge-active'}">${ev.action==='lock'?ICON_LOCK:ICON_UNLOCK}${ev.action==='lock'?'ລັອກ':'ປົດລັອກ'}</span>
+        <span class="report-meta">
+          <span class="report-name">${esc(ev.name)}</span>
+          <span class="report-when">${esc(fmtDate(ev.at))}</span>
+          ${ev.reason ? `<span class="report-reason">ເຫດຜົນ: ${esc(ev.reason)}</span>` : ''}
+        </span>
+      </button>`).join('')
+    : `<div class="empty"><h2>ຍັງບໍ່ມີປະຫວັດ ລັອກ/ປົດລັອກ</h2></div>`;
+  $('#reportBody').querySelectorAll('.report-row').forEach(b =>
+    b.addEventListener('click', () => { $('#reportDialog').close(); openDetail(b.dataset.id); }));
+  $('#reportDialog').showModal();
+}
+
+/* ============================================================
+   Menu (⋯)
+   ============================================================ */
+let menuEl = null;
+function closeMenu(){
+  if (menuEl){ menuEl.remove(); menuEl = null; }
+  $('#menuBtn').setAttribute('aria-expanded', 'false');
+}
+$('#menuBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  if (menuEl){ closeMenu(); return; }
+  menuEl = document.createElement('div');
+  menuEl.className = 'menu';
+  menuEl.innerHTML = `
+    <button id="mReport"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v10h2V7Zm4 4v6h2v-6Zm4-2v8h2V9Z"/></svg>ລາຍງານ ລັອກ/ປົດລັອກ</button>
+    <button id="mExport"><svg viewBox="0 0 24 24"><path d="M12 3l4 4h-3v7h-2V7H8Zm-7 13h2v3h14v-3h2v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z" transform="translate(2 0)"/></svg>ສຳຮອງຂໍ້ມູນ (Export)</button>
+    <button id="mImport"><svg viewBox="0 0 24 24"><path d="M12 14l-4-4h3V3h2v7h3Zm-7 2h2v3h14v-3h2v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z" transform="translate(2 0)"/></svg>ນຳເຂົ້າຂໍ້ມູນ (Import)</button>
+    ${deferredInstall ? `<button id="mInstall"><svg viewBox="0 0 24 24"><path d="M12 3v10l-4-4-1.4 1.4L12 16.8l5.4-6.4L16 9l-4 4V3ZM5 19h14v2H5Z"/></svg>ຕິດຕັ້ງແອັບ</button>` : ''}`;
+  // แทรกถัดจากปุ่ม — ลำดับ Tab ต่อเนื่อง ไม่ต้องไล่ถึงท้ายหน้า
+  $('#menuBtn').insertAdjacentElement('afterend', menuEl);
+  $('#menuBtn').setAttribute('aria-expanded', 'true');
+  const r = $('#menuBtn').getBoundingClientRect();
+  menuEl.style.top = (r.bottom + 8) + 'px';
+  menuEl.style.right = Math.max(12, innerWidth - r.right) + 'px';
+  $('#mReport').addEventListener('click', () => { closeMenu(); openReport(); });
+  $('#mExport').addEventListener('click', () => { closeMenu(); doExport(); });
+  $('#mImport').addEventListener('click', () => { closeMenu(); $('#importInput').click(); });
+  $('#mInstall')?.addEventListener('click', async () => {
+    closeMenu();
+    deferredInstall.prompt();
+    await deferredInstall.userChoice;
+    deferredInstall = null;
+  });
+});
+document.addEventListener('click', e => { if (menuEl && !menuEl.contains(e.target)) closeMenu(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && menuEl){ closeMenu(); $('#menuBtn').focus(); }
+});
+addEventListener('resize', closeMenu);
+addEventListener('scroll', closeMenu, { passive:true, capture:true }); // เมนู fixed — scroll แล้วหลุดจากปุ่ม
+
+/* ============================================================
+   PWA
+   ============================================================ */
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+if ('serviceWorker' in navigator){
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+/* ============================================================
+   Init
+   ============================================================ */
+fillProvinceSelect();
+fillDistrictSelect('', null);
+refreshCatList();
+refreshSCatList();
+$('#nationalityList').innerHTML = NATIONALITIES.map(n => `<option value="${esc(n)}">`).join('');
+syncModuleUI(); // ตั้ง label/แท็บ/placeholder/ตัวกรองหมวด ตามระบบที่จำไว้
+// ขอ persistent storage — ข้อมูลทั้งหมดอยู่ใน IndexedDB อย่างเดียว
+// (best-effort ถูก browser ลบได้ตอนพื้นที่ตึง / Safari 7-day eviction)
+navigator.storage?.persist?.().catch(() => {});
+// iOS: คีย์บอร์ดไม่ resize layout viewport — วัดส่วนที่ถูกบังผ่าน visualViewport
+// แล้วยก bottom sheet ขึ้นด้วย --kb (Android ใช้ interactive-widget=resizes-content)
+if (window.visualViewport){
+  const kb = () => {
+    const off = Math.max(0, innerHeight - visualViewport.height - visualViewport.offsetTop);
+    document.documentElement.style.setProperty('--kb', off + 'px');
+  };
+  visualViewport.addEventListener('resize', kb);
+  visualViewport.addEventListener('scroll', kb);
+  kb();
+}
+/* ผู้ต้องหาที่ groupId ว่าง/ไม่ตรงกลุ่มใด → สร้าง "ກຸ່ມທົ່ວໄປ" แล้วย้ายเข้า (กัน record ลอย) */
+async function ensureGrouped(){
+  const ids = new Set(groups.map(g => g.id));
+  const orphans = suspects.filter(s => !s.groupId || !ids.has(s.groupId));
+  if (!orphans.length) return;
+  let def = groups.find(g => g.name === 'ກຸ່ມທົ່ວໄປ');
+  if (!def){
+    const now = new Date().toISOString();
+    def = { id: uuid(), name: 'ກຸ່ມທົ່ວໄປ', plannedCount: '', createdDate: '', createdAt: now, updatedAt: now };
+    await dbPut(def, 'groups'); groups.push(def);
+  }
+  for (const s of orphans){ s.groupId = def.id; await dbPut(s, 'suspects'); }
+}
+(async () => {
+  try { companies = await dbGetAll('companies'); }
+  catch (err) { console.error('DB error (companies)', err); companies = []; }
+  try { suspects = await dbGetAll('suspects'); }
+  catch (err) { console.error('DB error (suspects)', err); suspects = []; }
+  try { groups = await dbGetAll('groups'); }
+  catch (err) { console.error('DB error (groups)', err); groups = []; }
+  // migrate ข้อมูลเก่า: record ที่ล็อคอยู่แต่ยังไม่มี lockLog → สร้างจาก lockedAt
+  companies.forEach(c => {
+    if (!Array.isArray(c.lockLog))
+      c.lockLog = (c.locked && c.lockedAt) ? [{ action:'lock', at:c.lockedAt, reason:c.lockReason || '' }] : [];
+  });
+  await ensureGrouped(); // ผู้ต้องหาเดิม (ก่อนมีระบบกลุ่ม) → ย้ายเข้ากลุ่มทั่วไป
+  render();
+})();
+</script>
+</body>
+</html>
