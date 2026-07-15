@@ -1179,7 +1179,7 @@ const MODULES = {
   suspect: {
     subtitle: 'ລະບົບເກັບຂໍ້ມູນ ແລະ ຄຸ້ມຄອງສະຖິຕິຜູ້ຕ້ອງຫາ',
     // ระดับ "รายชื่อกลุ่ม"
-    groupSearchPh: 'ຄົ້ນຫາ ຊື່ກຸ່ມ…',
+    groupSearchPh: 'ຄົ້ນຫາຜູ້ຕ້ອງຫາ ຊື່, ສັນຊາດ, ໜັງສືຜ່ານແດນ…',
     fabGroupLabel: 'ສ້າງກຸ່ມ',
     groupStats: [ // สถิติระดับกลุ่ม (แสดงอย่างเดียว ไม่กรอง)
       { label:'ກຸ່ມ',       dot:'all' },
@@ -1503,9 +1503,38 @@ function visibleSuspects(){
 }
 function render(){
   stats();
-  if (module === 'company') renderCompanies();
-  else if (currentGroupId) renderSuspects();
-  else renderGroups();
+  if (module === 'company') return renderCompanies();
+  if (currentGroupId) return renderSuspects();       // ในกลุ่ม
+  if (search.trim()) return renderSuspectSearch();   // ค้นหาผู้ต้องหาข้ามทุกกลุ่ม
+  renderGroups();                                    // รายชื่อกลุ่ม
+}
+/* ค้นหาผู้ต้องหาทั้งระบบ (ชื่อ/สัญชาติ/เลขหนังสือผ่านแดน ฯลฯ) จากหน้ารายชื่อกลุ่ม */
+function renderSuspectSearch(){
+  const q = search.trim().toLowerCase();
+  const list = suspects
+    .filter(s => [s.name, s.category, s.nationality, s.borderPassNo, s.charge, s.detentionPlace, s.handlingUnit, s.exitCheckpoint]
+      .join(' ').toLowerCase().includes(q))
+    .sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||''));
+  const grid = $('#grid');
+  $('#srStatus').textContent = `ພົບ ${list.length} ຄົນ`;
+  if (!list.length){ grid.innerHTML = `<div class="empty"><h2>ບໍ່ພົບຜູ້ຕ້ອງຫາ</h2></div>`; return; }
+  grid.innerHTML = list.map(s => {
+    const st = suspectStatus(s);
+    const g = groupById(s.groupId);
+    const sub = [s.nationality, s.borderPassNo].filter(Boolean).join(' · ');
+    return `<article class="card" data-sid="${esc(s.id)}">
+      <div class="card-head">
+        <div class="card-name"><button class="card-open" type="button">${esc(s.name || '(ບໍ່ລະບຸຊື່)')}</button></div>
+        ${st === 'repatriated'
+          ? `<span class="badge badge-active">ສົ່ງກັບແລ້ວ</span>`
+          : `<span class="badge badge-locked">ຖືກກັກຕົວ</span>`}
+      </div>
+      <div class="card-meta">
+        ${g ? `<span class="badge badge-files">ກຸ່ມ: ${esc(g.name)}</span>` : ''}
+        ${sub ? `<span class="card-sub">${esc(sub)}</span>` : ''}
+      </div>
+    </article>`;
+  }).join('');
 }
 function renderGroups(){
   const list = visibleGroups();
@@ -1618,8 +1647,8 @@ $('#grid').addEventListener('click', e => {
   const card = e.target.closest('.card');
   if (!card) return;
   if (module === 'company'){ openDetail(card.dataset.id); return; }
-  if (currentGroupId) openSuspectDetail(card.dataset.sid); // ในกลุ่ม → เปิดผู้ต้องหา
-  else openGroup(card.dataset.gid);                        // รายชื่อกลุ่ม → เข้ากลุ่ม
+  if (card.dataset.sid) openSuspectDetail(card.dataset.sid); // ในกลุ่ม / ผลค้นหา → เปิดผู้ต้องหา
+  else if (card.dataset.gid) openGroup(card.dataset.gid);    // รายชื่อกลุ่ม → เข้ากลุ่ม
 });
 /* ปุ่มชื่อ (.card-open) เป็น <button> จริง — Enter/Space ยิง click เข้า delegation ข้างบนเอง */
 
