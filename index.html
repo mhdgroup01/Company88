@@ -1179,7 +1179,7 @@ const MODULES = {
   suspect: {
     subtitle: 'ລະບົບເກັບຂໍ້ມູນ ແລະ ຄຸ້ມຄອງສະຖິຕິຜູ້ຕ້ອງຫາ',
     // ระดับ "รายชื่อกลุ่ม"
-    groupSearchPh: 'ຄົ້ນຫາຜູ້ຕ້ອງຫາ ຊື່, ສັນຊາດ, ໜັງສືຜ່ານແດນ…',
+    groupSearchPh: 'ຄົ້ນຫາ ຊື່ກຸ່ມ / ຊື່, ສັນຊາດ, ໜັງສືຜ່ານແດນ…',
     fabGroupLabel: 'ສ້າງກຸ່ມ',
     groupStats: [ // สถิติระดับกลุ่ม (แสดงอย่างเดียว ไม่กรอง)
       { label:'ກຸ່ມ',       dot:'all' },
@@ -1505,63 +1505,68 @@ function render(){
   stats();
   if (module === 'company') return renderCompanies();
   if (currentGroupId) return renderSuspects();       // ในกลุ่ม
-  if (search.trim()) return renderSuspectSearch();   // ค้นหาผู้ต้องหาข้ามทุกกลุ่ม
+  if (search.trim()) return renderGroupListSearch(); // ค้นหา กลุ่ม + ผู้ต้องหา
   renderGroups();                                    // รายชื่อกลุ่ม
 }
-/* ค้นหาผู้ต้องหาทั้งระบบ (ชื่อ/สัญชาติ/เลขหนังสือผ่านแดน ฯลฯ) จากหน้ารายชื่อกลุ่ม */
-function renderSuspectSearch(){
+/* การ์ดกลุ่ม (no = หมายเลขลำดับ, null = ไม่แสดง เช่นในผลค้นหา) */
+function groupCardHTML(g, no){
+  const mem = groupSuspects(g.id);
+  const rep = mem.filter(s => suspectStatus(s) === 'repatriated').length;
+  const planned = (g.plannedCount === '' || g.plannedCount == null) ? null : g.plannedCount;
+  const line2 = [g.createdDate ? fmtDay(g.createdDate) : '', `ຖືກກັກຕົວ ${mem.length - rep} · ສົ່ງກັບແລ້ວ ${rep}`].filter(Boolean).join(' · ');
+  return `<article class="card" data-gid="${esc(g.id)}">
+    <div class="card-head">
+      ${no != null ? `<span class="card-no">${no}</span>` : ''}
+      <div class="card-name"><button class="card-open" type="button">${esc(g.name)}</button></div>
+      <span class="badge badge-files">${mem.length}${planned != null ? '/' + esc(String(planned)) : ''} ຄົນ</span>
+    </div>
+    <div class="card-meta"><span class="card-sub">${esc(line2)}</span></div>
+  </article>`;
+}
+/* การ์ดผู้ต้องหาในผลค้นหา (มี badge บอกกลุ่ม) */
+function suspectResultCardHTML(s){
+  const st = suspectStatus(s);
+  const g = groupById(s.groupId);
+  const sub = [s.nationality, s.borderPassNo].filter(Boolean).join(' · ');
+  return `<article class="card" data-sid="${esc(s.id)}">
+    <div class="card-head">
+      <div class="card-name"><button class="card-open" type="button">${esc(s.name || '(ບໍ່ລະບຸຊື່)')}</button></div>
+      ${st === 'repatriated'
+        ? `<span class="badge badge-active">ສົ່ງກັບແລ້ວ</span>`
+        : `<span class="badge badge-locked">ຖືກກັກຕົວ</span>`}
+    </div>
+    <div class="card-meta">
+      ${g ? `<span class="badge badge-files">ກຸ່ມ: ${esc(g.name)}</span>` : ''}
+      ${sub ? `<span class="card-sub">${esc(sub)}</span>` : ''}
+    </div>
+  </article>`;
+}
+/* ค้นหาจากหน้ารายชื่อกลุ่ม: เจอทั้งชื่อกลุ่ม + ผู้ต้องหา (ชื่อ/สัญชาติ/เลขหนังสือผ่านแดน ฯลฯ) */
+function renderGroupListSearch(){
   const q = search.trim().toLowerCase();
-  const list = suspects
+  const gMatch = groups
+    .filter(g => (g.name||'').toLowerCase().includes(q))
+    .sort((a,b) => (b.createdDate||b.createdAt||'').localeCompare(a.createdDate||a.createdAt||''));
+  const sMatch = suspects
     .filter(s => [s.name, s.category, s.nationality, s.borderPassNo, s.charge, s.detentionPlace, s.handlingUnit, s.exitCheckpoint]
       .join(' ').toLowerCase().includes(q))
     .sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||''));
   const grid = $('#grid');
-  $('#srStatus').textContent = `ພົບ ${list.length} ຄົນ`;
-  if (!list.length){ grid.innerHTML = `<div class="empty"><h2>ບໍ່ພົບຜູ້ຕ້ອງຫາ</h2></div>`; return; }
-  grid.innerHTML = list.map(s => {
-    const st = suspectStatus(s);
-    const g = groupById(s.groupId);
-    const sub = [s.nationality, s.borderPassNo].filter(Boolean).join(' · ');
-    return `<article class="card" data-sid="${esc(s.id)}">
-      <div class="card-head">
-        <div class="card-name"><button class="card-open" type="button">${esc(s.name || '(ບໍ່ລະບຸຊື່)')}</button></div>
-        ${st === 'repatriated'
-          ? `<span class="badge badge-active">ສົ່ງກັບແລ້ວ</span>`
-          : `<span class="badge badge-locked">ຖືກກັກຕົວ</span>`}
-      </div>
-      <div class="card-meta">
-        ${g ? `<span class="badge badge-files">ກຸ່ມ: ${esc(g.name)}</span>` : ''}
-        ${sub ? `<span class="card-sub">${esc(sub)}</span>` : ''}
-      </div>
-    </article>`;
-  }).join('');
+  $('#srStatus').textContent = `ພົບ ${gMatch.length} ກຸ່ມ, ${sMatch.length} ຄົນ`;
+  if (!gMatch.length && !sMatch.length){ grid.innerHTML = `<div class="empty"><h2>ບໍ່ພົບຜົນການຄົ້ນຫາ</h2></div>`; return; }
+  grid.innerHTML = gMatch.map(g => groupCardHTML(g, null)).join('') + sMatch.map(suspectResultCardHTML).join('');
 }
 function renderGroups(){
   const list = visibleGroups();
   const grid = $('#grid');
-  $('#srStatus').textContent = search.trim() ? `ພົບ ${list.length} ກຸ່ມ` : '';
+  $('#srStatus').textContent = '';
   if (!groups.length){
     grid.innerHTML = `<div class="empty">
       <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
       <h2>ຍັງບໍ່ມີກຸ່ມ</h2><p>ກົດປຸ່ມ + ເພື່ອສ້າງກຸ່ມທຳອິດ</p></div>`;
     return;
   }
-  if (!list.length){ grid.innerHTML = `<div class="empty"><h2>ບໍ່ພົບກຸ່ມ</h2></div>`; return; }
-  grid.innerHTML = list.map((g,i) => {
-    const mem = groupSuspects(g.id);
-    const rep = mem.filter(s => suspectStatus(s) === 'repatriated').length;
-    const planned = (g.plannedCount === '' || g.plannedCount == null) ? null : g.plannedCount;
-    // บรรทัด 2: วันที่ (ไม่มีคำว่า "ສ້າງ") · สรุปสถานะ
-    const line2 = [g.createdDate ? fmtDay(g.createdDate) : '', `ຖືກກັກຕົວ ${mem.length - rep} · ສົ່ງກັບແລ້ວ ${rep}`].filter(Boolean).join(' · ');
-    return `<article class="card" data-gid="${esc(g.id)}">
-      <div class="card-head">
-        <span class="card-no">${i + 1}</span>
-        <div class="card-name"><button class="card-open" type="button">${esc(g.name)}</button></div>
-        <span class="badge badge-files">${mem.length}${planned != null ? '/' + esc(String(planned)) : ''} ຄົນ</span>
-      </div>
-      <div class="card-meta"><span class="card-sub">${esc(line2)}</span></div>
-    </article>`;
-  }).join('');
+  grid.innerHTML = list.map((g,i) => groupCardHTML(g, i + 1)).join('');
 }
 function renderCompanies(){
   const list = visible();
