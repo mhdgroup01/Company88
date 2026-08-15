@@ -763,6 +763,9 @@ a.file-row .open-ico{flex:none; width:18px; height:18px; fill:var(--text-tertiar
   </button>
   <span class="crumb-name" id="crumbName"></span>
   <div class="crumb-actions">
+    <button class="crumb-act" id="crumbExport" aria-label="ສົ່ງອອກ Excel" title="ສົ່ງອອກ Excel">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Zm0 2 4 4h-4ZM8.5 12h1.4l1.1 1.9 1.1-1.9h1.4l-1.8 3 1.8 3h-1.4l-1.1-1.9-1.1 1.9H8.5l1.8-3Z"/></svg>
+    </button>
     <button class="crumb-act" id="crumbEdit" aria-label="ແກ້ໄຂກຸ່ມ">
       <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.8 9.94l-3.75-3.75ZM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75Z"/></svg>
     </button>
@@ -1227,6 +1230,11 @@ function fmtDay(ymd){
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
   if (!m) return '—';
   return `${Number(m[3])} ${LAO_MONTHS[Number(m[2])-1]} ${m[1]}`;
+}
+/* วันที่แบบ DD/MM/YYYY (สำหรับรายงาน Excel) */
+function fmtDMY(ymd){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd || '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
 }
 /* สถานะผู้ต้องหา — อนุมานจากวันที่ที่กรอก */
 function suspectStatus(s){
@@ -2067,6 +2075,118 @@ $('#crumbDelete').addEventListener('click', async () => {
   toast('ລຶບກຸ່ມແລ້ວ');
   backToGroups();
 });
+
+/* ============================================================
+   Export Excel (.xlsx จริง — สร้าง zip/CRC32 เอง ไม่พึ่งไลบรารี)
+   ============================================================ */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
+  return t;
+})();
+function crc32(bytes){ let c = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+/* ZIP แบบ stored (ไม่บีบอัด) — พอสำหรับ .xlsx */
+function zipStore(files){
+  const enc = new TextEncoder();
+  const u16 = n => [n & 255, (n >>> 8) & 255];
+  const u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+  const parts = [], central = []; let offset = 0;
+  for (const f of files){
+    const nameB = enc.encode(f.name);
+    const data = f.data;
+    const crc = crc32(data);
+    const local = [0x50,0x4b,0x03,0x04, ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(nameB.length), ...u16(0)];
+    parts.push(new Uint8Array(local), nameB, data);
+    central.push(new Uint8Array([0x50,0x4b,0x01,0x02, ...u16(20), ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(nameB.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset)]), nameB);
+    offset += local.length + nameB.length + data.length;
+  }
+  const cStart = offset;
+  const cLen = central.reduce((a, c) => a + c.length, 0);
+  const eocd = new Uint8Array([0x50,0x4b,0x05,0x06, ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cLen), ...u32(cStart), ...u16(0)]);
+  const all = [...parts, ...central, eocd];
+  const total = all.reduce((a, c) => a + c.length, 0);
+  const out = new Uint8Array(total); let p = 0;
+  for (const a of all){ out.set(a, p); p += a.length; }
+  return out;
+}
+const COLS = ['A','B','C','D','E','F','G','H'];
+/* rows: [ [ {v, bold?, num?}, ... ], ... ]  → worksheet xml */
+function sheetXML(rows){
+  const body = rows.map((cells, ri) => {
+    const r = ri + 1;
+    const cs = cells.map((c, ci) => {
+      const ref = COLS[ci] + r;
+      const s = c.bold ? ' s="1"' : '';
+      if (c.num) return `<c r="${ref}"${s}><v>${c.v}</v></c>`;
+      return `<c r="${ref}" t="inlineStr"${s}><is><t xml:space="preserve">${esc(String(c.v ?? ''))}</t></is></c>`;
+    }).join('');
+    return `<row r="${r}">${cs}</row>`;
+  }).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="6"/><col min="2" max="2" width="26"/><col min="3" max="3" width="16"/><col min="4" max="4" width="14"/><col min="5" max="5" width="22"/></cols><sheetData>${body}</sheetData></worksheet>`;
+}
+function buildXlsx(rows, sheetName){
+  const enc = new TextEncoder();
+  const F = (name, str) => ({ name, data: enc.encode(str) });
+  const files = [
+    F('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`),
+    F('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`),
+    F('xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${esc(sheetName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`),
+    F('xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`),
+    F('xl/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`),
+    F('xl/worksheets/sheet1.xml', sheetXML(rows)),
+  ];
+  return zipStore(files);
+}
+/* จัดรายงาน 1 กลุ่ม ตามฟอร์แมต: จัดผู้ต้องหาตาม (วันส่งกลับ + ด่านส่งออก) แล้วไล่เลข */
+function groupReportRows(g){
+  const mem = groupSuspects(g.id);
+  const rows = [];
+  rows.push([{ v: `ກຸ່ມ ${g.name}`, bold: true }]);
+  rows.push([{ v: `ຈຳນວນຜູ້ຕ້ອງຫາທັງໝົດ ${mem.length} ຄົນ`, bold: true }]);
+  rows.push([]);
+  const buckets = new Map();
+  for (const s of mem){
+    const key = (s.repatriatedAt || '') + '||' + (s.exitCheckpoint || '');
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(s);
+  }
+  const keys = [...buckets.keys()].sort((a, b) => {
+    const da = a.split('||')[0], db = b.split('||')[0];
+    if (!da && db) return 1;        // ยังไม่ส่งกลับ → ไว้ท้าย
+    if (da && !db) return -1;
+    return da.localeCompare(db);
+  });
+  for (const key of keys){
+    const rep = key.split('||')[0], chk = key.slice(key.indexOf('||') + 2);
+    rows.push([{ v: `ນຳສົ່ງກັບຄืນປະເທດວັນທີ: ${rep ? fmtDMY(rep) : '— (ຍັງບໍ່ໄດ້ສົ່ງກັບ)'}`, bold: true }]);
+    rows.push([{ v: `ດ່ານສົ່ງອອກ: ${chk || '—'}`, bold: true }]);
+    rows.push([
+      { v: 'ລຳດັບ', bold: true }, { v: 'ຊື່ ແລະ ນາມສະກຸນ', bold: true },
+      { v: 'ວັນທີ່ຖືກກັກຕົວ', bold: true }, { v: 'ສັນຊາດ', bold: true }, { v: 'ໜັງສືຜ່ານແດນເລກທີ', bold: true },
+    ]);
+    buckets.get(key).forEach((s, i) => {
+      rows.push([
+        { num: true, v: i + 1 }, { v: s.name || '' },
+        { v: fmtDMY(s.detainedAt) }, { v: s.nationality || '' }, { v: s.borderPassNo || '' },
+      ]);
+    });
+    rows.push([]);
+  }
+  return rows;
+}
+function exportGroupExcel(gid){
+  const g = groupById(gid); if (!g) return;
+  const bytes = buildXlsx(groupReportRows(g), 'ລາຍງານ');
+  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const safe = (g.name || 'group').replace(/[\\/:*?"<>|]/g, '_').slice(0, 60);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${safe}.xlsx`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast('ສົ່ງອອກ Excel ແລ້ວ');
+}
+$('#crumbExport').addEventListener('click', () => exportGroupExcel(currentGroupId));
 
 /* ============================================================
    ระบบผู้ต้องหา (suspects) — form / detail / delete
