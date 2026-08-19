@@ -125,6 +125,30 @@ img{max-width:100%; display:block}
 /* แถบทึบใต้ status bar ของ iOS standalone — กันตัวหนังสือนาฬิกาขาวจมพื้นสว่างตอน scroll */
 .statusbar-cover{position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top); background:var(--hero-a); z-index:40}
 
+/* ── Login gate (client-side) ── */
+#loginScreen{
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  padding:calc(env(safe-area-inset-top) + var(--space-4)) var(--space-4) var(--space-4);
+  background:linear-gradient(160deg,var(--hero-a),var(--hero-b));
+}
+#loginScreen[hidden]{display:none}
+.login-card{
+  width:min(380px,100%);
+  background:var(--bg-surface);
+  border-radius:var(--radius-l);
+  box-shadow:var(--shadow-2);
+  padding:var(--space-5) var(--space-4);
+  display:flex; flex-direction:column; gap:var(--space-3);
+  text-align:center;
+}
+.login-emblem{width:76px; height:76px; margin:0 auto; filter:drop-shadow(0 2px 6px rgba(0,0,0,.3))}
+.login-title{font-size:1.05rem; font-weight:700; line-height:1.4}
+.login-sub{font-size:.9rem; color:var(--text-tertiary); margin-top:calc(-1 * var(--space-2))}
+.login-card .field{text-align:start; margin-bottom:0}
+.login-error{color:var(--danger-text); font-size:.85rem; font-weight:600}
+.login-btn{width:100%; margin-top:var(--space-1)}
+
 /* ── Hero header ── */
 .hero{
   background:linear-gradient(160deg,var(--hero-a),var(--hero-b));
@@ -700,6 +724,24 @@ a.file-row .open-ico{flex:none; width:18px; height:18px; fill:var(--text-tertiar
 </style>
 </head>
 <body>
+<!-- ══ Login gate (ประตูฝั่ง client) ══ -->
+<div id="loginScreen">
+  <form id="loginForm" class="login-card">
+    <img class="login-emblem" src="icons/emblem-police.svg" alt="" aria-hidden="true">
+    <h1 class="login-title">ພະແນກຮັບແຈ້ງຄວາມ ແລະ ປະສານງານ</h1>
+    <p class="login-sub">ເຂົ້າສູ່ລະບົບ</p>
+    <div class="field">
+      <label for="loginUser">ຊື່ຜູ້ໃຊ້</label>
+      <input class="input" id="loginUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="loginPass">ລະຫັດຜ່ານ</label>
+      <input class="input" id="loginPass" type="password" autocomplete="current-password">
+    </div>
+    <div id="loginError" class="login-error" role="alert" hidden>ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ</div>
+    <button type="submit" class="btn btn-primary login-btn">ເຂົ້າສູ່ລະບົບ</button>
+  </form>
+</div>
 <div class="statusbar-cover" aria-hidden="true"></div>
 
 <!-- ══ Header ══ -->
@@ -1361,6 +1403,44 @@ $('#themeBtn').addEventListener('click', () => {
 });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 applyTheme();
+
+/* ============================================================
+   Login gate — ประตูฝั่ง client (ไม่ใช่ auth เซิร์ฟเวอร์; static PWA ไม่มี backend)
+   เก็บรหัสเป็น SHA-256 ไม่ใช่ plaintext; สถานะล็อกอินอยู่ใน localStorage (stay signed in)
+   ============================================================ */
+const AUTH_KEY = 'borisat-auth';
+const AUTH_USER = 'pol207';
+const AUTH_PASS_HASH = '7fee2d50d923a70f7183562feec7bd255d0b12781a221b519b83152eb9fe6255';
+async function sha256hex(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function showLogin(){
+  $('#loginScreen').hidden = false;
+  $('#loginPass').value = '';
+  $('#loginError').hidden = true;
+  setTimeout(() => $('#loginUser').focus(), 50);
+}
+function hideLogin(){ $('#loginScreen').hidden = true; }
+function logout(){ localStorage.removeItem(AUTH_KEY); showLogin(); }
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const u = $('#loginUser').value.trim();
+  const p = $('#loginPass').value;
+  let ok = false;
+  try { ok = u === AUTH_USER && (await sha256hex(p)) === AUTH_PASS_HASH; } catch {}
+  if (ok){
+    localStorage.setItem(AUTH_KEY, '1');
+    hideLogin();
+  } else {
+    $('#loginError').hidden = false;
+    $('#loginPass').value = '';
+    $('#loginPass').focus();
+  }
+});
+// เปิดแอป: ถ้าเคยล็อกอินค้างไว้ → ข้ามหน้า login
+if (localStorage.getItem(AUTH_KEY) === '1') hideLogin();
+else showLogin();
 
 /* ============================================================
    Render
@@ -2577,7 +2657,8 @@ $('#menuBtn').addEventListener('click', e => {
     <button id="mReport"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v10h2V7Zm4 4v6h2v-6Zm4-2v8h2V9Z"/></svg>ລາຍງານ ລັອກ/ປົດລັອກ</button>
     <button id="mExport"><svg viewBox="0 0 24 24"><path d="M12 3l4 4h-3v7h-2V7H8Zm-7 13h2v3h14v-3h2v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z" transform="translate(2 0)"/></svg>ສຳຮອງຂໍ້ມູນ (Export)</button>
     <button id="mImport"><svg viewBox="0 0 24 24"><path d="M12 14l-4-4h3V3h2v7h3Zm-7 2h2v3h14v-3h2v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z" transform="translate(2 0)"/></svg>ນຳເຂົ້າຂໍ້ມູນ (Import)</button>
-    ${deferredInstall ? `<button id="mInstall"><svg viewBox="0 0 24 24"><path d="M12 3v10l-4-4-1.4 1.4L12 16.8l5.4-6.4L16 9l-4 4V3ZM5 19h14v2H5Z"/></svg>ຕິດຕັ້ງແອັບ</button>` : ''}`;
+    ${deferredInstall ? `<button id="mInstall"><svg viewBox="0 0 24 24"><path d="M12 3v10l-4-4-1.4 1.4L12 16.8l5.4-6.4L16 9l-4 4V3ZM5 19h14v2H5Z"/></svg>ຕິດຕັ້ງແອັບ</button>` : ''}
+    <button id="mLogout"><svg viewBox="0 0 24 24"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5Zm5.4 3.6L14 8l2 2H8v2h8l-2 2 1.4 1.4L20 12Z"/></svg>ອອກຈາກລະບົບ</button>`;
   // แทรกถัดจากปุ่ม — ลำดับ Tab ต่อเนื่อง ไม่ต้องไล่ถึงท้ายหน้า
   $('#menuBtn').insertAdjacentElement('afterend', menuEl);
   $('#menuBtn').setAttribute('aria-expanded', 'true');
@@ -2593,6 +2674,7 @@ $('#menuBtn').addEventListener('click', e => {
     await deferredInstall.userChoice;
     deferredInstall = null;
   });
+  $('#mLogout').addEventListener('click', () => { closeMenu(); logout(); });
 });
 document.addEventListener('click', e => { if (menuEl && !menuEl.contains(e.target)) closeMenu(); });
 document.addEventListener('keydown', e => {
