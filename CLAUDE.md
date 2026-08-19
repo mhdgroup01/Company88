@@ -1,5 +1,7 @@
 # Borisat — ພະແນກຮັບແຈ້ງຄວາມ ແລະ ປະສານງານ (แอปทะเบียน + ระบบล็อคสถานะ)
 
+> **Deploy:** LIVE ที่ **https://pol207.parme.me** (VPS — `./deploy.sh` rsync ไป root@187.127.209.83:/docker/pol207-prod/html; nginx container + Traefik + Let's Encrypt; แก้ shell ต้อง bump `VERSION` ใน sw.js). ก็อปปี้ที่ GitHub Pages: https://mhdgroup01.github.io/Company88/ (`git push`). DNS = Cloudflare (A pol207→187.127.209.83 DNS only, ไม่มี wildcard); subdomain ใหม่ cert ไม่ออก → restart `traefik-traefik-1`.
+
 > ชื่อแอปที่แสดง = "ພະແນກຮັບແຈ້ງຄວາມ ແລະ ປະສານງານ" (เปลี่ยนจาก "ທະບຽນບໍລິສັດ" เมื่อ 2026-07-13).
 > โลโก้ = ตราตำรวจลาว `icons/emblem-police.svg` (ตัด watermark ออกจากไฟล์ต้นฉบับ seeklogo แล้ว).
 > ไอคอน PWA (icon-192/512, maskable, apple-touch) เรนเดอร์จาก SVG นี้ผ่าน **browser canvas** (ไม่ใช่ PIL — PIL เรนเดอร์ SVG ไม่ได้). `tools/make_icons.py` = โลโก้เก่า เลิกใช้ (มี guard --force กันเขียนทับ).
