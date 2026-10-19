@@ -1,5 +1,5 @@
 /* Borisat service worker — app shell offline-first */
-const VERSION = 'borisat-v5';
+const VERSION = 'borisat-v16';
 const FONT_CACHE = 'borisat-fonts-v1';
 const SHELL = [
   './',

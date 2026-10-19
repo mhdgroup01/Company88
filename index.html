@@ -301,6 +301,30 @@ img{max-width:100%; display:block}
 .crumb-act:hover{background:var(--interactive-soft); color:var(--interactive-text)}
 .crumb-act.danger:hover{background:var(--danger-soft); color:var(--danger-text)}
 .crumb-act svg{width:19px; height:19px; fill:currentColor}
+.group-actions{
+  max-width:1080px; margin:var(--space-4) auto calc(-1 * var(--space-2));
+  padding:0 var(--space-4);
+  display:flex; justify-content:flex-end;
+}
+/* Export picker (ติ๊กเลือกรายการ) */
+.pick-all{
+  display:flex; align-items:center; gap:var(--space-2);
+  min-height:var(--touch-min); font-weight:700;
+  padding:0 var(--space-2); border-bottom:1px solid var(--border); margin-bottom:var(--space-2);
+  cursor:pointer;
+}
+.pick-sect{font-weight:700; font-size:.82rem; color:var(--text-secondary); margin:var(--space-2) 0 4px; letter-spacing:.02em}
+.pick-sect:first-child{margin-top:0}
+.pick-list{display:flex; flex-direction:column; gap:2px}
+.pick-row{
+  display:flex; align-items:center; gap:var(--space-2);
+  min-height:var(--touch-min); padding:0 var(--space-2);
+  border-radius:var(--radius-s); cursor:pointer;
+}
+.pick-row:hover{background:var(--bg-sunken)}
+.pick-all input, .pick-row input{width:20px; height:20px; flex:none; accent-color:var(--interactive)}
+.pick-label{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pick-meta{flex:none; color:var(--text-tertiary); font-size:.85rem}
 
 /* ── Card grid ── */
 .grid{
@@ -797,6 +821,14 @@ a.file-row .open-ico{flex:none; width:18px; height:18px; fill:var(--text-tertiar
   </div>
 </div>
 
+<!-- ══ ปุ่มระดับรายชื่อกลุ่ม (ผู้ต้องหา) — ส่งออก Excel ทุกกลุ่มพร้อมกัน ══ -->
+<div class="group-actions" id="groupActions" hidden>
+  <button class="btn btn-ghost" id="exportAllBtn" type="button">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Zm0 2 4 4h-4ZM8.5 12h1.4l1.1 1.9 1.1-1.9h1.4l-1.8 3 1.8 3h-1.4l-1.1-1.9-1.1 1.9H8.5l1.8-3Z"/></svg>
+    ສົ່ງອອກ Excel ທຸກກຸ່ມ
+  </button>
+</div>
+
 <!-- ══ Breadcrumb (เข้ากลุ่มผู้ต้องหา) ══ -->
 <div id="crumb" class="crumb" hidden>
   <button class="crumb-back" id="crumbBack" aria-label="ກັບຄືນລາຍຊື່ກຸ່ມ">
@@ -927,6 +959,30 @@ a.file-row .open-ico{flex:none; width:18px; height:18px; fill:var(--text-tertiar
   </div>
 </dialog>
 
+<!-- ══ Export picker dialog (ติ๊กเลือกว่าจะส่งออกอะไรบ้าง) ══ -->
+<dialog id="exportDialog" aria-labelledby="exportTitle">
+  <div class="dlg-head">
+    <h2 id="exportTitle">ເລືອກຂໍ້ມູນທີ່ຈະສົ່ງອອກ</h2>
+    <button type="button" class="icon-btn" data-close style="color:var(--text-secondary)" aria-label="ປິດ">
+      <svg viewBox="0 0 24 24"><path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6Z"/></svg>
+    </button>
+  </div>
+  <div class="dlg-body">
+    <div class="pick-sect">ຖັນທີ່ຈະສະແດງໃນໄຟລ໌</div>
+    <div id="exportCols" class="pick-list"></div>
+    <div class="pick-sect">ສະຫຼຸບ</div>
+    <label class="pick-row"><input type="checkbox" id="exportSummary" checked><span class="pick-label">ສະຫຼຸບຈຳນວນ ຍິງ / ຊາຍ</span></label>
+    <label class="pick-row"><input type="checkbox" id="exportSummaryNat" checked><span class="pick-label">ສະຫຼຸບຈຳນວນຕາມສັນຊາດ</span></label>
+    <div class="pick-sect" id="exportItemsSect">ລາຍການທີ່ຈະສົ່ງອອກ</div>
+    <label class="pick-all"><input type="checkbox" id="exportAll" checked><span>ເລືອກທັງໝົດ</span></label>
+    <div id="exportList" class="pick-list"></div>
+  </div>
+  <div class="dlg-foot">
+    <button type="button" class="btn btn-ghost" data-close>ຍົກເລີກ</button>
+    <button type="button" class="btn btn-primary" id="exportConfirm">ສົ່ງອອກ Excel</button>
+  </div>
+</dialog>
+
 <!-- ══ Detail dialog ══ -->
 <dialog id="detailDialog" aria-labelledby="detailHeadTitle">
   <div class="dlg-head">
@@ -1012,14 +1068,22 @@ a.file-row .open-ico{flex:none; width:18px; height:18px; fill:var(--text-tertiar
       </div>
       <div class="field-row">
         <div class="field">
+          <label for="sSex">ເພດ</label>
+          <select id="sSex">
+            <option value="">— ບໍ່ລະບຸ —</option>
+            <option value="ຍິງ">ຍິງ</option>
+            <option value="ຊາຍ">ຊາຍ</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="sDob">ວັນ/ເດືອນ/ປີເກີດ</label>
           <input class="input" id="sDob" type="date">
         </div>
-        <div class="field">
-          <label for="sNationality">ສັນຊາດ</label>
-          <input class="input" id="sNationality" list="nationalityList" placeholder="ພິມ ຫຼື ເລືອກ…">
-          <datalist id="nationalityList"></datalist>
-        </div>
+      </div>
+      <div class="field">
+        <label for="sNationality">ສັນຊາດ</label>
+        <input class="input" id="sNationality" list="nationalityList" placeholder="ພິມ ຫຼື ເລືອກ…">
+        <datalist id="nationalityList"></datalist>
       </div>
       <div class="field">
         <label for="sBorderPass">ເລກທີ່ໜັງສືຜ່ານແດນ</label>
@@ -1052,7 +1116,7 @@ a.file-row .open-ico{flex:none; width:18px; height:18px; fill:var(--text-tertiar
       </div>
       <div class="field">
         <label for="sExitCheckpoint">ດ່ານທີ່ສົ່ງອອກ</label>
-        <input class="input" id="sExitCheckpoint">
+        <select id="sExitCheckpoint"></select>
       </div>
       <div class="field">
         <label>ເອກະສານແນບ (PDF / ຮູບ / ໄຟລ໌ອື່ນໆ)</label>
@@ -1152,41 +1216,72 @@ const DEFAULT_CATS = ['ການຄ້າ','ກໍ່ສ້າງ','ຂົນສ
 const MAX_FILE = 25 * 1024 * 1024; // 25MB ต่อไฟล์
 
 /* ============================================================
-   IndexedDB
+   Server data layer — Supabase REST @ api.parme.me (ตาราง pol207_records)
+   ออนไลน์อย่างเดียว: ข้อมูลทุกอย่างอยู่บน server → ทุกเครื่องเห็นชุดเดียวกัน
+   auth = RPC pol207_login (bcrypt → JWT role=pol207_role, RLS แยกจาก Parme)
    ============================================================ */
-const dbp = new Promise((resolve, reject) => {
-  const req = indexedDB.open('borisat', 3); // v3: เพิ่ม store 'groups' (กลุ่มผู้ต้องหา)
-  req.onupgradeneeded = () => {
-    const db = req.result;
-    if (!db.objectStoreNames.contains('companies')) db.createObjectStore('companies', { keyPath: 'id' });
-    if (!db.objectStoreNames.contains('suspects')) db.createObjectStore('suspects', { keyPath: 'id' });
-    if (!db.objectStoreNames.contains('groups')) db.createObjectStore('groups', { keyPath: 'id' });
-  };
-  req.onsuccess = () => resolve(req.result);
-  req.onerror = () => reject(req.error);
-});
-async function dbGetAll(store='companies'){
-  const db = await dbp;
-  return new Promise((res, rej) => {
-    const r = db.transaction(store).objectStore(store).getAll();
-    r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error);
+const SB_URL = 'https://api.parme.me';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzgzMDA0NzUzLCJleHAiOjIwOTgzNjQ3NTN9.QEMsUA4dMoev6gvzUirKdIbrNIEMlQhpn5cXCj4pUUY';
+const TOKEN_KEY = 'borisat-token';
+const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
+async function sbFetch(path, opts = {}){
+  const res = await fetch(SB_URL + path, {
+    ...opts,
+    headers: { apikey: SB_ANON, Authorization: 'Bearer ' + (getToken() || SB_ANON), 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
+  if (res.status === 401 || res.status === 403){ // token หมดอายุ/ผิด → บังคับ login ใหม่
+    localStorage.removeItem(TOKEN_KEY);
+    if (typeof showLogin === 'function') showLogin();
+    throw new Error('unauthorized');
+  }
+  if (!res.ok) throw new Error('server ' + res.status);
+  return res;
+}
+/* ไฟล์แนบ: Blob (ในเครื่อง) ↔ base64 (บน server) */
+async function serializeRec(item){
+  if (!Array.isArray(item.files) || !item.files.length) return item;
+  const files = [];
+  for (const f of item.files) files.push({ id: f.id, name: f.name, type: f.type, size: f.size, data: f.blob ? await blobToDataURL(f.blob) : f.data });
+  return { ...item, files };
+}
+async function deserializeRec(item){
+  if (!item || !Array.isArray(item.files) || !item.files.length) return item;
+  const files = [];
+  for (const f of item.files){ if (typeof f.data === 'string') files.push({ id: f.id, name: f.name, type: f.type, size: f.size, blob: await dataURLToBlob(f.data) }); }
+  return { ...item, files };
+}
+async function dbGetAll(store = 'companies'){
+  const res = await sbFetch(`/rest/v1/pol207_records?kind=eq.${encodeURIComponent(store)}&select=data`);
+  const rows = await res.json();
+  const out = [];
+  for (const r of rows) out.push(await deserializeRec(r.data));
+  return out;
+}
+async function dbPut(item, store = 'companies'){
+  const data = await serializeRec(item);
+  await sbFetch('/rest/v1/pol207_records', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ id: store + ':' + item.id, kind: store, data, updated_at: new Date().toISOString() }),
   });
 }
-async function dbPut(item, store='companies'){
-  const db = await dbp;
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store,'readwrite');
-    tx.objectStore(store).put(item);
-    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
-  });
+async function dbDelete(id, store = 'companies'){
+  await sbFetch(`/rest/v1/pol207_records?id=eq.${encodeURIComponent(store + ':' + id)}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
 }
-async function dbDelete(id, store='companies'){
-  const db = await dbp;
-  return new Promise((res, rej) => {
-    const tx = db.transaction(store,'readwrite');
-    tx.objectStore(store).delete(id);
-    tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
-  });
+/* โหลดข้อมูลทั้งหมดจาก server แล้ว render (ใช้ตอน login สำเร็จ / เปิดแอป / refresh) */
+async function loadAllData(){
+  try {
+    const [c, s, g] = await Promise.all([dbGetAll('companies'), dbGetAll('suspects'), dbGetAll('groups')]);
+    companies = c; suspects = s; groups = g;
+    await loadCatsFromServer();
+    companies.forEach(x => { if (!Array.isArray(x.lockLog)) x.lockLog = (x.locked && x.lockedAt) ? [{ action:'lock', at:x.lockedAt, reason:x.lockReason || '' }] : []; });
+    await ensureGrouped();
+    refreshCatList(); refreshSCatList(); syncModuleUI();
+    render();
+  } catch (err){
+    console.error('load error', err);
+    if (getToken()) toast('ໂຫຼດຂໍ້ມູນບໍ່ໄດ້ — ກວດອິນເຕີເນັດ');
+  }
 }
 
 /* ============================================================
@@ -1243,6 +1338,8 @@ const MODULES = {
 };
 /* สัญชาติที่พบบ่อย (datalist ช่วยกรอก) */
 const NATIONALITIES = ['ລາວ','ໄທ','ຫວຽດນາມ','ຈີນ','ກຳປູເຈຍ','ມຽນມາ','ມາເລເຊຍ','ສິງກະໂປ','ອິນເດຍ','ບັງກະລາເທດ','ອື່ນໆ'];
+/* ด่านสากลที่ส่งออก (datalist — เลือกจากรายการทางการ ลาว หรือพิมพ์เอง) */
+const CHECKPOINTS = ['ສະໜາມບິນສາກົນວັດໄຕ','ສະໜາມບິນສາກົນຫຼວງພະບາງ','ສະໜາມບິນສາກົນສະຫວັນນະເຂດ','ສະໜາມບິນສາກົນປາກເຊ','ດ່ານສາກົນຂົວມິດຕະພາບ ລາວ-ໄທ ແຫ່ງທີ 1','ດ່ານສາກົນຂົວມິດຕະພາບ ລາວ-ໄທ ແຫ່ງທີ 2','ດ່ານສາກົນຂົວມິດຕະພາບ ລາວ-ໄທ ແຫ່ງທີ 3','ດ່ານສາກົນຂົວມິດຕະພາບ ລາວ-ໄທ ແຫ່ງທີ 4','ດ່ານສາກົນຂົວມິດຕະພາບ ລາວ-ໄທ ແຫ່ງທີ 5','ດ່ານສາກົນທາງລົດໄຟ ລາວ-ຈີນ','ດ່ານສາກົນປາງຮົກ','ດ່ານສາກົນລານຕຸຍ','ດ່ານສາກົນບໍ່ເຕ່ນ','ດ່ານສາກົນສາມຫຼ່ຽມຄຳ','ດ່ານສາກົນເມືອງມອມ','ດ່ານສາກົນນ້ຳໂສຍ','ດ່ານສາກົນນ້ຳເຫືອງ','ດ່ານສາກົນນ້ຳເງິນ','ດ່ານສາກົນພູດູ່','ດ່ານສາກົນປາງມອນ','ດ່ານສາກົນນ້ຳກັ່ນ','ດ່ານສາກົນນ້ຳພາວ','ດ່ານສາກົນນາເພົ້າ','ດ່ານສາກົນແດນສະຫວັນ','ສະຖານີລົດໄຟຄຳສະຫວາດ'];
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -1317,27 +1414,28 @@ function toast(msg){
 /* ============================================================
    ประเภทธุรกิจ — ผู้ใช้เพิ่ม/แก้ไข/ลบเองได้ (localStorage)
    ============================================================ */
-const CAT_KEY = 'borisat-categories';        // ประเภทธุรกิจ (บริษัท)
-const SCAT_KEY = 'borisat-suspect-cats';     // หมวดผู้ต้องหา (ผู้ใช้ตั้งเอง เริ่มว่าง)
-function loadCats(){
+/* หมวด/ประเภท — เก็บบน server (kind='meta') แชร์ทุกเครื่อง
+   cache ในเครื่องให้ loadCats/saveCats คง API เดิม (sync) ไว้ */
+let catCache = { company: null, suspect: null }; // null = ยังไม่โหลดจาก server
+async function loadCatsFromServer(){
   try {
-    const v = JSON.parse(localStorage.getItem(CAT_KEY));
-    if (Array.isArray(v)) return v.filter(x => typeof x === 'string' && x.trim());
-  } catch {}
-  return [...DEFAULT_CATS];
+    const metas = await dbGetAll('meta');
+    const co = metas.find(m => m && m.id === 'cat-company');
+    const su = metas.find(m => m && m.id === 'cat-suspect');
+    catCache.company = co && Array.isArray(co.list) ? co.list.filter(x => typeof x === 'string' && x.trim()) : null;
+    catCache.suspect = su && Array.isArray(su.list) ? su.list.filter(x => typeof x === 'string' && x.trim()) : null;
+  } catch { /* คงค่า cache เดิมไว้ */ }
 }
-function loadSCats(){
-  try {
-    const v = JSON.parse(localStorage.getItem(SCAT_KEY));
-    if (Array.isArray(v)) return v.filter(x => typeof x === 'string' && x.trim());
-  } catch {}
-  return [];
+function loadCats(){ return catCache.company ? [...catCache.company] : [...DEFAULT_CATS]; }
+function loadSCats(){ return catCache.suspect ? [...catCache.suspect] : []; }
+function saveCats(list){
+  catCache.company = list; refreshCatList();
+  dbPut({ id: 'cat-company', list }, 'meta').catch(() => toast('ບັນທຶກໝວດບໍ່ໄດ້ — ກວດອິນເຕີເນັດ'));
 }
-function saveCats(list){ localStorage.setItem(CAT_KEY, JSON.stringify(list)); refreshCatList(); }
 function saveSCats(list){
-  localStorage.setItem(SCAT_KEY, JSON.stringify(list));
-  refreshSCatList();
+  catCache.suspect = list; refreshSCatList();
   if (module === 'suspect') syncModuleUI(); // อัปเดต dropdown กรองตามหมวด
+  dbPut({ id: 'cat-suspect', list }, 'meta').catch(() => toast('ບັນທຶກໝວດບໍ່ໄດ້ — ກວດອິນເຕີເນັດ'));
 }
 function refreshCatList(){ $('#categoryList').innerHTML = loadCats().map(c => `<option value="${esc(c)}">`).join(''); }
 function refreshSCatList(){ $('#suspectCatList').innerHTML = loadSCats().map(c => `<option value="${esc(c)}">`).join(''); }
@@ -1405,16 +1503,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme
 applyTheme();
 
 /* ============================================================
-   Login gate — ประตูฝั่ง client (ไม่ใช่ auth เซิร์ฟเวอร์; static PWA ไม่มี backend)
-   เก็บรหัสเป็น SHA-256 ไม่ใช่ plaintext; สถานะล็อกอินอยู่ใน localStorage (stay signed in)
+   Login — auth จริงฝั่ง server (RPC pol207_login → JWT เก็บใน localStorage)
+   token คุมสิทธิ์เข้าถึงข้อมูลบน server (RLS) จนหมดอายุ 30 วัน
    ============================================================ */
-const AUTH_KEY = 'borisat-auth';
-const AUTH_USER = 'pol207';
-const AUTH_PASS_HASH = '7fee2d50d923a70f7183562feec7bd255d0b12781a221b519b83152eb9fe6255';
-async function sha256hex(s){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-}
 function showLogin(){
   $('#loginScreen').hidden = false;
   $('#loginPass').value = '';
@@ -1422,24 +1513,41 @@ function showLogin(){
   setTimeout(() => $('#loginUser').focus(), 50);
 }
 function hideLogin(){ $('#loginScreen').hidden = true; }
-function logout(){ localStorage.removeItem(AUTH_KEY); showLogin(); }
+function logout(){ localStorage.removeItem(TOKEN_KEY); showLogin(); }
 $('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const u = $('#loginUser').value.trim();
   const p = $('#loginPass').value;
-  let ok = false;
-  try { ok = u === AUTH_USER && (await sha256hex(p)) === AUTH_PASS_HASH; } catch {}
-  if (ok){
-    localStorage.setItem(AUTH_KEY, '1');
-    hideLogin();
-  } else {
-    $('#loginError').hidden = false;
-    $('#loginPass').value = '';
-    $('#loginPass').focus();
+  const btn = $('#loginForm .login-btn');
+  const err = $('#loginError');
+  btn.disabled = true;
+  try {
+    const res = await fetch(SB_URL + '/rest/v1/rpc/pol207_login', {
+      method: 'POST',
+      headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ u, p }),
+    });
+    const token = await res.json(); // string (สำเร็จ) หรือ null (รหัสผิด)
+    if (res.ok && typeof token === 'string' && token){
+      localStorage.setItem(TOKEN_KEY, token);
+      err.hidden = true;
+      hideLogin();
+      await loadAllData(); // โหลดข้อมูลจาก server
+    } else {
+      err.textContent = 'ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ';
+      err.hidden = false;
+      $('#loginPass').value = '';
+      $('#loginPass').focus();
+    }
+  } catch {
+    err.textContent = 'ເຊື່ອມຕໍ່ server ບໍ່ໄດ້ — ກວດອິນເຕີເນັດ';
+    err.hidden = false;
+  } finally {
+    btn.disabled = false;
   }
 });
-// เปิดแอป: ถ้าเคยล็อกอินค้างไว้ → ข้ามหน้า login
-if (localStorage.getItem(AUTH_KEY) === '1') hideLogin();
+// เปิดแอป: ถ้ามี token ค้างไว้ → เข้าเลย (loadAllData ทำใน init ด้านล่าง); ไม่มี → หน้า login
+if (getToken()) hideLogin();
 else showLogin();
 
 /* ============================================================
@@ -1591,6 +1699,8 @@ function visibleSuspects(){
 }
 function render(){
   stats();
+  // ปุ่ม "ส่งออกทุกกลุ่ม" โผล่เฉพาะหน้ารายชื่อกลุ่มของระบบผู้ต้องหา และต้องมีกลุ่มอย่างน้อย 1
+  $('#groupActions').hidden = !(module === 'suspect' && !currentGroupId && groups.length > 0);
   if (module === 'company') return renderCompanies();
   if (currentGroupId) return renderSuspects();       // ในกลุ่ม
   if (search.trim()) return renderGroupListSearch(); // ค้นหา กลุ่ม + ผู้ต้องหา
@@ -2190,8 +2300,8 @@ function zipStore(files){
   return out;
 }
 const COLS = ['A','B','C','D','E','F','G','H'];
-/* rows: [ [ {v, bold?, num?}, ... ], ... ]  → worksheet xml */
-function sheetXML(rows){
+/* rows: [ [ {v, bold?, num?}, ... ], ... ]  → worksheet xml; widths = ความกว้างคอลัมน์ตามลำดับ */
+function sheetXML(rows, widths){
   const body = rows.map((cells, ri) => {
     const r = ri + 1;
     const cs = cells.map((c, ci) => {
@@ -2202,9 +2312,10 @@ function sheetXML(rows){
     }).join('');
     return `<row r="${r}">${cs}</row>`;
   }).join('');
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="6"/><col min="2" max="2" width="26"/><col min="3" max="3" width="16"/><col min="4" max="4" width="14"/><col min="5" max="5" width="22"/></cols><sheetData>${body}</sheetData></worksheet>`;
+  const colsXml = (widths && widths.length) ? `<cols>${widths.map((w, i) => `<col min="${i+1}" max="${i+1}" width="${w}"/>`).join('')}</cols>` : '';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${colsXml}<sheetData>${body}</sheetData></worksheet>`;
 }
-function buildXlsx(rows, sheetName){
+function buildXlsx(rows, sheetName, widths){
   const enc = new TextEncoder();
   const F = (name, str) => ({ name, data: enc.encode(str) });
   const files = [
@@ -2212,17 +2323,68 @@ function buildXlsx(rows, sheetName){
     F('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`),
     F('xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${esc(sheetName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`),
     F('xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`),
-    F('xl/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`),
-    F('xl/worksheets/sheet1.xml', sheetXML(rows)),
+    F('xl/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Phetsarath OT"/></font><font><b/><sz val="11"/><name val="Phetsarath OT"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`),
+    F('xl/worksheets/sheet1.xml', sheetXML(rows, widths)),
   ];
   return zipStore(files);
 }
+/* คอลัมน์รายงาน Excel — ติ๊กเลือกแสดงได้ (ยกเว้น seq/name บังคับ); w=ความกว้าง, groupOnly=เฉพาะ export หลายกลุ่ม */
+const REPORT_COLS = [
+  { key:'seq',          label:'ລຳດັບ',              w:6,  always:true, num:true, val:(s,i)=>i+1 },
+  { key:'name',         label:'ຊື່ ແລະ ນາມສະກຸນ',  w:26, always:true, val:s=>s.name||'' },
+  { key:'sex',          label:'ເພດ',                w:8,  val:s=>s.sex||'' },
+  { key:'detainedAt',   label:'ວັນທີ່ຖືກກັກຕົວ',   w:16, val:s=>fmtDMY(s.detainedAt) },
+  { key:'nationality',  label:'ສັນຊາດ',             w:14, val:s=>s.nationality||'' },
+  { key:'borderPassNo', label:'ໜັງສືຜ່ານແດນເລກທີ', w:22, val:s=>s.borderPassNo||'' },
+  { key:'group',        label:'ກຸ່ມ',               w:20, groupOnly:true, val:(s,i,gn)=>gn||'' },
+];
+const EXPORT_COLS_KEY = 'borisat-export-cols';
+function exportColPrefs(){ try { const v = JSON.parse(localStorage.getItem(EXPORT_COLS_KEY)); return (v && typeof v === 'object') ? v : {}; } catch { return {}; } }
+function activeCols(includeGroup){
+  const p = exportColPrefs();
+  return REPORT_COLS.filter(c => (c.groupOnly ? includeGroup : true) && (c.always || p[c.key] !== false));
+}
+const colHeader = cols => cols.map(c => ({ v: c.label, bold: true }));
+const colRow = (cols, s, i, gn) => cols.map(c => c.num ? { num: true, v: c.val(s, i, gn) } : { v: c.val(s, i, gn) });
+/* สรุปจำนวน แยกเพศ (ຍິງ/ຊາຍ + ບໍ່ລະບຸถ้ามี) — เปิด/ปิดด้วยติ๊ก summary */
+const summaryEnabled = () => exportColPrefs().summary !== false; // default เปิด
+function sexSummaryRows(members){
+  const f = members.filter(s => s.sex === 'ຍິງ').length;
+  const m = members.filter(s => s.sex === 'ຊາຍ').length;
+  const u = members.length - f - m;
+  const rows = [[{ v: `ຍິງ: ${f} ຄົນ`, bold: true }], [{ v: `ຊາຍ: ${m} ຄົນ`, bold: true }]];
+  if (u > 0) rows.push([{ v: `ບໍ່ລະບຸເພດ: ${u} ຄົນ`, bold: true }]);
+  return rows;
+}
+/* สรุปจำนวน แยกตามสัญชาติ + แยกเพศในแต่ละสัญชาติ (แต่ละประเทศ: รวม / ຍິງ / ຊາຍ)
+   เรียงมาก→น้อย, ไม่ระบุสัญชาติไว้ท้าย */
+const summaryNatEnabled = () => exportColPrefs().summaryNat !== false; // default เปิด
+function natSummaryRows(members){
+  const counts = new Map(); // สัญชาติ → {f,m,u,total}
+  for (const s of members){
+    const k = (s.nationality || '').trim();
+    if (!counts.has(k)) counts.set(k, { f: 0, m: 0, u: 0, total: 0 });
+    const c = counts.get(k);
+    c.total++;
+    if (s.sex === 'ຍິງ') c.f++; else if (s.sex === 'ຊາຍ') c.m++; else c.u++;
+  }
+  const brk = c => `ຍິງ ${c.f} · ຊາຍ ${c.m}` + (c.u > 0 ? ` · ບໍ່ລະບຸເພດ ${c.u}` : '');
+  const named = [...counts.entries()].filter(([k]) => k).sort((a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0]));
+  const rows = named.map(([k, c]) => [{ v: `${k}: ${c.total} ຄົນ (${brk(c)})`, bold: true }]);
+  const un = counts.get('');
+  if (un && un.total > 0) rows.push([{ v: `ບໍ່ລະບຸສັນຊາດ: ${un.total} ຄົນ (${brk(un)})`, bold: true }]);
+  return rows;
+}
 /* จัดรายงาน 1 กลุ่ม ตามฟอร์แมต: จัดผู้ต้องหาตาม (วันส่งกลับ + ด่านส่งออก) แล้วไล่เลข */
-function groupReportRows(g){
-  const mem = groupSuspects(g.id);
+function groupReportRows(g, allowIds, cols){
+  cols = cols || activeCols(false);
+  let mem = groupSuspects(g.id);
+  if (allowIds) mem = mem.filter(s => allowIds.has(s.id)); // เฉพาะผู้ต้องหาที่ติ๊กเลือก
   const rows = [];
   rows.push([{ v: `ກຸ່ມ ${g.name}`, bold: true }]);
   rows.push([{ v: `ຈຳນວນຜູ້ຕ້ອງຫາທັງໝົດ ${mem.length} ຄົນ`, bold: true }]);
+  if (summaryEnabled()) for (const r of sexSummaryRows(mem)) rows.push(r);
+  if (summaryNatEnabled()) for (const r of natSummaryRows(mem)) rows.push(r);
   rows.push([]);
   const buckets = new Map();
   for (const s of mem){
@@ -2238,35 +2400,139 @@ function groupReportRows(g){
   });
   for (const key of keys){
     const rep = key.split('||')[0], chk = key.slice(key.indexOf('||') + 2);
-    rows.push([{ v: `ນຳສົ່ງກັບຄืນປະເທດວັນທີ: ${rep ? fmtDMY(rep) : '— (ຍັງບໍ່ໄດ້ສົ່ງກັບ)'}`, bold: true }]);
+    rows.push([{ v: `ນຳສົ່ງກັບຄືນປະເທດວັນທີ: ${rep ? fmtDMY(rep) : '— (ຍັງບໍ່ໄດ້ສົ່ງກັບ)'}`, bold: true }]);
     rows.push([{ v: `ດ່ານສົ່ງອອກ: ${chk || '—'}`, bold: true }]);
-    rows.push([
-      { v: 'ລຳດັບ', bold: true }, { v: 'ຊື່ ແລະ ນາມສະກຸນ', bold: true },
-      { v: 'ວັນທີ່ຖືກກັກຕົວ', bold: true }, { v: 'ສັນຊາດ', bold: true }, { v: 'ໜັງສືຜ່ານແດນເລກທີ', bold: true },
-    ]);
-    buckets.get(key).forEach((s, i) => {
-      rows.push([
-        { num: true, v: i + 1 }, { v: s.name || '' },
-        { v: fmtDMY(s.detainedAt) }, { v: s.nationality || '' }, { v: s.borderPassNo || '' },
-      ]);
-    });
+    rows.push(colHeader(cols));
+    buckets.get(key).forEach((s, i) => rows.push(colRow(cols, s, i)));
     rows.push([]);
   }
   return rows;
 }
-function exportGroupExcel(gid){
-  const g = groupById(gid); if (!g) return;
-  const bytes = buildXlsx(groupReportRows(g), 'ລາຍງານ');
+function downloadXlsx(bytes, filename){
   const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const safe = (g.name || 'group').replace(/[\\/:*?"<>|]/g, '_').slice(0, 60);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${safe}.xlsx`;
+  a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const xlsxSafe = (name, fallback) => (name || fallback).replace(/[\\/:*?"<>|]/g, '_').slice(0, 60);
+/* export 1 กลุ่ม — allowIds (Set) = เฉพาะผู้ต้องหาที่ติ๊กเลือก (ไม่ส่ง = ทั้งหมด) */
+function exportGroupExcel(gid, allowIds){
+  const g = groupById(gid); if (!g) return;
+  const cols = activeCols(false);
+  downloadXlsx(buildXlsx(groupReportRows(g, allowIds, cols), 'ລາຍງານ', cols.map(c => c.w)), `${xlsxSafe(g.name, 'group')}.xlsx`);
   toast('ສົ່ງອອກ Excel ແລ້ວ');
 }
-$('#crumbExport').addEventListener('click', () => exportGroupExcel(currentGroupId));
+
+/* รายงานรวมหลายกลุ่มในชีตเดียว: หัวเอกสาร + แต่ละกลุ่มต่อกัน (คั่นด้วยบรรทัดว่าง)
+   ใช้ groupReportRows() เดิมต่อกลุ่ม → ฟอร์แมตในแต่ละกลุ่มเหมือน export เดี่ยวเป๊ะ */
+function allGroupsReportRows(list, cols){
+  cols = cols || activeCols(true);
+  // รวมผู้ต้องหาจากทุกกลุ่มที่เลือก แล้วจัด bucket ตาม (วันส่งกลับ + ด่านส่งออก) ข้ามกลุ่ม
+  // → ใครส่งกลับวันเดียวกัน/ด่านเดียวกัน อยู่หมวดเดียวกันหมด (คอลัมน์ ກຸ່ມ บอกที่มา ถ้าเลือกแสดง)
+  const all = [];
+  for (const g of list) for (const s of groupSuspects(g.id)) all.push({ s, groupName: g.name || '' });
+  const allSel = list.length === groups.length;
+  const rows = [];
+  rows.push([{ v: allSel ? 'ລາຍງານຜູ້ຕ້ອງຫາ — ທຸກກຸ່ມ' : 'ລາຍງານຜູ້ຕ້ອງຫາ', bold: true }]);
+  rows.push([{ v: `ຈຳນວນຜູ້ຕ້ອງຫາທັງໝົດ ${all.length} ຄົນ (ຈາກ ${list.length} ກຸ່ມ)`, bold: true }]);
+  if (summaryEnabled()) for (const r of sexSummaryRows(all.map(x => x.s))) rows.push(r);
+  if (summaryNatEnabled()) for (const r of natSummaryRows(all.map(x => x.s))) rows.push(r);
+  rows.push([]);
+  const buckets = new Map();
+  for (const item of all){
+    const key = (item.s.repatriatedAt || '') + '||' + (item.s.exitCheckpoint || '');
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(item);
+  }
+  const keys = [...buckets.keys()].sort((a, b) => {
+    const da = a.split('||')[0], db = b.split('||')[0];
+    if (!da && db) return 1;        // ยังไม่ส่งกลับ → ไว้ท้าย
+    if (da && !db) return -1;
+    return da.localeCompare(db);
+  });
+  for (const key of keys){
+    const rep = key.split('||')[0], chk = key.slice(key.indexOf('||') + 2);
+    rows.push([{ v: `ນຳສົ່ງກັບຄືນປະເທດວັນທີ: ${rep ? fmtDMY(rep) : '— (ຍັງບໍ່ໄດ້ສົ່ງກັບ)'}`, bold: true }]);
+    rows.push([{ v: `ດ່ານສົ່ງອອກ: ${chk || '—'}`, bold: true }]);
+    rows.push(colHeader(cols));
+    buckets.get(key).forEach((item, i) => rows.push(colRow(cols, item.s, i, item.groupName)));
+    rows.push([]);
+  }
+  return rows;
+}
+/* export หลายกลุ่ม — groupList = กลุ่มที่ติ๊กเลือก (เรียงตามวันที่สร้างใหม่→เก่า) */
+function exportAllGroupsExcel(groupList){
+  const list = [...groupList].sort((a, b) => (b.createdDate || b.createdAt || '').localeCompare(a.createdDate || a.createdAt || ''));
+  if (!list.length){ toast('ຍັງບໍ່ມີກຸ່ມ'); return; }
+  const cols = activeCols(true);
+  downloadXlsx(buildXlsx(allGroupsReportRows(list, cols), 'ທຸກກຸ່ມ', cols.map(c => c.w)), 'ລາຍງານຜູ້ຕ້ອງຫາ-ທຸກກຸ່ມ.xlsx');
+  toast('ສົ່ງອອກ Excel ແລ້ວ');
+}
+
+/* ── ติ๊กเลือกก่อนส่งออก: ทุกปุ่ม Export เปิด dialog นี้ (ติ๊กทั้งหมด default) ── */
+let exportMode = null; // 'groups' | 'suspects'
+function openExportPicker(mode){
+  const listEl = $('#exportList');
+  let items;
+  if (mode === 'groups'){
+    if (!groups.length){ toast('ຍັງບໍ່ມີກຸ່ມ'); return; }
+    $('#exportTitle').textContent = 'ເລືອກກຸ່ມທີ່ຈະສົ່ງອອກ';
+    items = [...groups]
+      .sort((a, b) => (b.createdDate || b.createdAt || '').localeCompare(a.createdDate || a.createdAt || ''))
+      .map(g => ({ id: g.id, label: g.name || '—', meta: `${groupSuspects(g.id).length} ຄົນ` }));
+  } else {
+    const g = groupById(currentGroupId); if (!g) return;
+    const mem = groupSuspects(g.id);
+    if (!mem.length){ toast('ຍັງບໍ່ມີຜູ້ຕ້ອງຫາໃນກຸ່ມນີ້'); return; }
+    $('#exportTitle').textContent = `ເລືອກຜູ້ຕ້ອງຫາ — ${g.name || ''}`;
+    items = mem.map(s => ({ id: s.id, label: s.name || '(ບໍ່ມີຊື່)', meta: s.repatriatedAt ? fmtDMY(s.repatriatedAt) : '' }));
+  }
+  exportMode = mode;
+  // ติ๊กเลือกคอลัมน์ที่จะแสดง (group เฉพาะ export หลายกลุ่ม) — เติมจากค่าที่จำไว้
+  const prefs = exportColPrefs();
+  const toggleCols = REPORT_COLS.filter(c => !c.always && (c.groupOnly ? mode === 'groups' : true));
+  $('#exportCols').innerHTML = toggleCols.map(c =>
+    `<label class="pick-row"><input type="checkbox" class="col-item" value="${esc(c.key)}" ${prefs[c.key] !== false ? 'checked' : ''}>` +
+    `<span class="pick-label">${esc(c.label)}</span></label>`).join('');
+  $('#exportSummary').checked = prefs.summary !== false;       // สรุป ຍິງ/ຊາຍ (default เปิด)
+  $('#exportSummaryNat').checked = prefs.summaryNat !== false;  // สรุปตามสัญชาติ (default เปิด)
+  listEl.innerHTML = items.map(it =>
+    `<label class="pick-row"><input type="checkbox" class="pick-item" value="${esc(it.id)}" checked>` +
+    `<span class="pick-label">${esc(it.label)}</span>` +
+    (it.meta ? `<span class="pick-meta">${esc(it.meta)}</span>` : '') + `</label>`).join('');
+  $('#exportAll').checked = true;
+  $('#exportDialog').showModal();
+}
+// ติ๊ก "ทั้งหมด" → ติ๊ก/ปลดทุกรายการ
+$('#exportAll').addEventListener('change', e => {
+  $$('#exportList .pick-item').forEach(c => { c.checked = e.target.checked; });
+});
+// ติ๊กรายการเดี่ยว → sync สถานะปุ่ม "ทั้งหมด"
+$('#exportList').addEventListener('change', () => {
+  const boxes = $$('#exportList .pick-item');
+  $('#exportAll').checked = boxes.length > 0 && boxes.every(c => c.checked);
+});
+$('#exportConfirm').addEventListener('click', () => {
+  const ids = $$('#exportList .pick-item:checked').map(c => c.value);
+  if (!ids.length){ toast('ກະລຸນາເລືອກຢ່າງໜ້ອຍ 1 ລາຍການ'); return; }
+  // จำคอลัมน์ที่เลือกแสดง (merge กับของเดิม เพื่อคงค่าคอลัมน์ที่ไม่ได้โชว์ในโหมดนี้ เช่น ກຸ່ມ)
+  const colPrefs = exportColPrefs();
+  $$('#exportCols .col-item').forEach(c => { colPrefs[c.value] = c.checked; });
+  colPrefs.summary = $('#exportSummary').checked;
+  colPrefs.summaryNat = $('#exportSummaryNat').checked;
+  localStorage.setItem(EXPORT_COLS_KEY, JSON.stringify(colPrefs));
+  $('#exportDialog').close();
+  if (exportMode === 'groups'){
+    const set = new Set(ids);
+    exportAllGroupsExcel(groups.filter(g => set.has(g.id)));
+  } else {
+    exportGroupExcel(currentGroupId, new Set(ids));
+  }
+});
+$('#crumbExport').addEventListener('click', () => openExportPicker('suspects'));
+$('#exportAllBtn').addEventListener('click', () => openExportPicker('groups'));
 
 /* ============================================================
    ระบบผู้ต้องหา (suspects) — form / detail / delete
@@ -2279,7 +2545,7 @@ const ICON_UNIT = '<svg viewBox="0 0 24 24"><path d="M3 21V7l7-4 7 4v3h4v11h-6v-
 const ICON_EXIT = '<svg viewBox="0 0 24 24"><path d="M10 3h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-8v-2h8V5h-8Zm-.5 5 4 4-4 4-1.4-1.4L11.2 13H3v-2h8.2L8.1 9.4Z"/></svg>';
 
 const sVal = id => $(id).value.trim();
-/* checkbox "ຂ້າມກ່อน" ↔ ช่องวันที่: ติ๊ก = ปิดช่อง+ล้างค่า (ยังไม่ดำเนินการ) */
+/* checkbox "ຂ້າມກ່ອນ" ↔ ช่องวันที่: ติ๊ก = ปิดช่อง+ล้างค่า (ยังไม่ดำเนินการ) */
 function wireSkip(cbId, dateId){
   const cb = $(cbId), d = $(dateId);
   cb.addEventListener('change', () => { d.disabled = cb.checked; if (cb.checked) d.value = ''; });
@@ -2321,22 +2587,44 @@ $('#sFilesInput').addEventListener('change', e => {
   e.target.value = '';
   renderSFormFiles();
 });
+/* เติม select ด่านส่งออก: เลือกได้เฉพาะ CHECKPOINTS (ห้ามพิมพ์เอง)
+   ถ้าเรคคอร์ดเก่ามีค่าด่านนอกรายการ → เพิ่มเป็นตัวเลือก "(ເດີມ)" กันข้อมูลหายตอนแก้ไข */
+function fillCheckpointSelect(val){
+  const sel = $('#sExitCheckpoint');
+  let opts = '<option value="">— ເລືອກ —</option>' + CHECKPOINTS.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  if (val && !CHECKPOINTS.includes(val)) opts += `<option value="${esc(val)}">${esc(val)} (ເດີມ)</option>`;
+  sel.innerHTML = opts;
+  sel.value = val || '';
+}
+/* จำค่าที่กรอกล่าสุด → เติมให้อัตโนมัติตอน "เพิ่ม" ผู้ต้องหาคนถัดไป (กรอกทีละหลายคนในชุดเดียว)
+   จำเฉพาะฟิลด์บริบทที่มักซ้ำทั้งชุด — ไม่จำ ชื่อ/วันเกิด/เลขหนังสือผ่านแดน (เป็นข้อมูลเฉพาะบุคคล) */
+const SDEFAULTS_KEY = 'borisat-suspect-defaults';
+const SDEFAULT_FIELDS = ['category','sex','nationality','detainedAt','detentionPlace','charge','handlingUnit','caseClosedAt','repatriatedAt','exitCheckpoint'];
+function loadSDefaults(){ try { const v = JSON.parse(localStorage.getItem(SDEFAULTS_KEY)); return (v && typeof v === 'object') ? v : {}; } catch { return {}; } }
+function saveSDefaults(item){
+  const d = {};
+  for (const k of SDEFAULT_FIELDS) d[k] = item[k] || '';
+  try { localStorage.setItem(SDEFAULTS_KEY, JSON.stringify(d)); } catch {}
+}
 function openSuspectForm(s=null){
   sEditingId = s ? s.id : null;
   sFormFiles = s && Array.isArray(s.files) ? [...s.files] : [];
   $('#sFormTitle').textContent = s ? 'ແກ້ໄຂຂໍ້ມູນຜູ້ຕ້ອງຫາ' : 'ເພີ່ມຜູ້ຕ້ອງຫາ';
-  $('#sName').value = s?.name || '';
-  $('#sCategory').value = s?.category || '';
-  $('#sDob').value = s?.dob || '';
-  $('#sNationality').value = s?.nationality || '';
-  $('#sBorderPass').value = s?.borderPassNo || '';
-  $('#sDetainedAt').value = s?.detainedAt || '';
-  $('#sDetentionPlace').value = s?.detentionPlace || '';
-  $('#sCharge').value = s?.charge || '';
-  $('#sHandlingUnit').value = s?.handlingUnit || '';
-  applySkip('#sCaseClosedSkip', '#sCaseClosedAt', s?.caseClosedAt);
-  applySkip('#sRepatriatedSkip', '#sRepatriatedAt', s?.repatriatedAt);
-  $('#sExitCheckpoint').value = s?.exitCheckpoint || '';
+  const d = s ? null : loadSDefaults();       // เพิ่มใหม่ = เติมค่าจำครั้งก่อน; แก้ไข = ใช้ค่าเดิมของเรคคอร์ด
+  const val = k => s ? (s[k] || '') : (d[k] || '');
+  $('#sName').value = s?.name || '';          // ชื่อ: ไม่จำ (กรอกใหม่ทุกคน)
+  $('#sCategory').value = val('category');
+  $('#sSex').value = val('sex');
+  $('#sDob').value = s?.dob || '';            // วันเกิด: ไม่จำ (เฉพาะบุคคล)
+  $('#sNationality').value = val('nationality');
+  $('#sBorderPass').value = s?.borderPassNo || ''; // เลขหนังสือผ่านแดน: ไม่จำ (เฉพาะบุคคล)
+  $('#sDetainedAt').value = val('detainedAt');
+  $('#sDetentionPlace').value = val('detentionPlace');
+  $('#sCharge').value = val('charge');
+  $('#sHandlingUnit').value = val('handlingUnit');
+  applySkip('#sCaseClosedSkip', '#sCaseClosedAt', val('caseClosedAt'));
+  applySkip('#sRepatriatedSkip', '#sRepatriatedAt', val('repatriatedAt'));
+  fillCheckpointSelect(val('exitCheckpoint'));
   renderSFormFiles();
   $('#suspectFormDialog').showModal();
   setTimeout(() => $('#sName').focus(), 50);
@@ -2351,6 +2639,7 @@ $('#suspectForm').addEventListener('submit', async e => {
     id: sEditingId || uuid(),
     name,
     category,
+    sex: $('#sSex').value || '',
     dob: $('#sDob').value || '',
     nationality: sVal('#sNationality'),
     borderPassNo: sVal('#sBorderPass'),
@@ -2368,6 +2657,7 @@ $('#suspectForm').addEventListener('submit', async e => {
   };
   await dbPut(item, 'suspects');
   learnSCat(category); // จำหมวดใหม่อัตโนมัติ
+  saveSDefaults(item); // จำค่าบริบทที่กรอก ไว้เติมให้คนถัดไป (ยกเว้นชื่อ/วันเกิด/หนังสือผ่านแดน)
   const i = suspects.findIndex(s => s.id === item.id);
   if (i >= 0) suspects[i] = item; else suspects.push(item);
   $('#suspectFormDialog').close();
@@ -2411,6 +2701,7 @@ function openSuspectDetail(id){
         ${s.category ? `<span class="badge" style="background:var(--interactive-soft);color:var(--interactive-text)">${esc(s.category)}</span>` : ''}
         ${s.nationality ? `<span class="badge" style="background:var(--bg-sunken);color:var(--text-secondary)">${ICON_FLAG}${esc(s.nationality)}</span>` : ''}
       </div>
+      ${sInfoRow(ICON_PERSON, 'ເພດ', s.sex)}
       ${sInfoRow(ICON_CAL, 'ວ/ດ/ປ ເກີດ', fmtDay(s.dob) === '—' ? '' : fmtDay(s.dob))}
       ${sInfoRow(ICON_DOC, 'ໜັງສືຜ່ານແດນ', s.borderPassNo)}
       ${sInfoRow(ICON_CAL, 'ວັນທີ່ຖືກກັກຕົວ', fmtDay(s.detainedAt) === '—' ? '' : fmtDay(s.detainedAt))}
@@ -2580,6 +2871,7 @@ $('#importInput').addEventListener('change', async e => {
           id: (typeof raw.id === 'string' && /^[\w-]{1,64}$/.test(raw.id)) ? raw.id : uuid(),
           name: str(raw.name, 300).trim(),
           category: str(raw.category, 100),
+          sex: str(raw.sex, 20),
           dob: day(raw.dob),
           nationality: str(raw.nationality, 100),
           borderPassNo: str(raw.borderPassNo, 100),
@@ -2699,6 +2991,7 @@ fillDistrictSelect('', null);
 refreshCatList();
 refreshSCatList();
 $('#nationalityList').innerHTML = NATIONALITIES.map(n => `<option value="${esc(n)}">`).join('');
+fillCheckpointSelect(''); // เติมตัวเลือกด่านให้ select (เลือกได้เฉพาะรายการ ห้ามพิมพ์เอง)
 syncModuleUI(); // ตั้ง label/แท็บ/placeholder/ตัวกรองหมวด ตามระบบที่จำไว้
 // ขอ persistent storage — ข้อมูลทั้งหมดอยู่ใน IndexedDB อย่างเดียว
 // (best-effort ถูก browser ลบได้ตอนพื้นที่ตึง / Safari 7-day eviction)
@@ -2727,21 +3020,21 @@ async function ensureGrouped(){
   }
   for (const s of orphans){ s.groupId = def.id; await dbPut(s, 'suspects'); }
 }
-(async () => {
-  try { companies = await dbGetAll('companies'); }
-  catch (err) { console.error('DB error (companies)', err); companies = []; }
-  try { suspects = await dbGetAll('suspects'); }
-  catch (err) { console.error('DB error (suspects)', err); suspects = []; }
-  try { groups = await dbGetAll('groups'); }
-  catch (err) { console.error('DB error (groups)', err); groups = []; }
-  // migrate ข้อมูลเก่า: record ที่ล็อคอยู่แต่ยังไม่มี lockLog → สร้างจาก lockedAt
-  companies.forEach(c => {
-    if (!Array.isArray(c.lockLog))
-      c.lockLog = (c.locked && c.lockedAt) ? [{ action:'lock', at:c.lockedAt, reason:c.lockReason || '' }] : [];
-  });
-  await ensureGrouped(); // ผู้ต้องหาเดิม (ก่อนมีระบบกลุ่ม) → ย้ายเข้ากลุ่มทั่วไป
-  render();
-})();
+// เปิดแอป: ถ้ามี token → โหลดข้อมูลจาก server (loadAllData จัดการ migrate/group/render ครบ)
+(async () => { if (getToken()) await loadAllData(); })();
+
+// เห็นข้อมูลล่าสุดจากเครื่องอื่น: refresh เมื่อกลับมาโฟกัสแอป
+// (เว้นช่วง 8 วิ และไม่รีเฟรชระหว่างเปิด dialog กรอกฟอร์มอยู่)
+let _lastSync = 0;
+async function maybeRefresh(){
+  if (!getToken() || document.querySelector('dialog[open]')) return;
+  const now = Date.now();
+  if (now - _lastSync < 8000) return;
+  _lastSync = now;
+  await loadAllData();
+}
+window.addEventListener('focus', maybeRefresh);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) maybeRefresh(); });
 </script>
 </body>
 </html>
